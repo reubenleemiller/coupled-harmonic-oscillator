@@ -255,6 +255,20 @@ header p.subtitle {
   border-color: var(--clr-accent);
 }
 
+.plot-select {
+  background: var(--clr-surface);
+  border: 1px solid var(--clr-border);
+  border-radius: 5px;
+  color: var(--clr-text);
+  padding: 0.35rem 0.5rem;
+  font-size: 0.88rem;
+  outline: none;
+  cursor: pointer;
+  transition: border-color var(--transition);
+}
+
+.plot-select:focus { border-color: var(--clr-accent); }
+
 .plot-container {
   position: relative;
   background: var(--clr-surface);
@@ -292,6 +306,11 @@ header p.subtitle {
 .plot-spinner-overlay p {
   font-size: 0.82rem;
   color: var(--clr-muted);
+}
+
+/* Solution spinner uses an opaque card-color background to fully hide content */
+#solution-spinner {
+  background: var(--clr-card);
 }
 
 .plot-hidden { display: none !important; }

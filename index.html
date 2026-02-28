@@ -245,7 +245,7 @@
       </div>
       <button id="btn-findtime" class="btn btn-primary btn-full">
         <span class="spinner spinner-hidden" id="spinner-findtime"></span>
-        Find First Time
+        <span class="btn-label">Find First Time</span>
       </button>
       <div class="result-box" id="result-findtime">
         <span class="res-none">—</span>
@@ -261,9 +261,9 @@
           <input type="number" id="u-time" placeholder="e.g. 3.14" step="0.01" />
         </div>
       </div>
-      <button id="btn-valattime" class="btn btn-secondary btn-full">
+      <button id="btn-valattime" class="btn btn-primary btn-full">
         <span class="spinner spinner-hidden" id="spinner-valattime"></span>
-        Compute Values
+        <span class="btn-label">Compute Values</span>
       </button>
       <div class="result-box" id="result-valattime">
         <span class="res-none">Enter a time value above, then click Compute.</span>
@@ -707,14 +707,27 @@ document.getElementById('p-config').addEventListener('change', () => {
   updateAll();
 });
 
+// ── Spinner helper for utility buttons ──────────────────────────────────
+function spinThenShow(btnId, spinnerId, resultId, computeFn) {
+  const btn = document.getElementById(btnId);
+  const spinner = document.getElementById(spinnerId);
+  const label = btn.querySelector('.btn-label');
+  spinner.classList.remove('spinner-hidden');
+  label.style.visibility = 'hidden';
+  btn.disabled = true;
+  const resultHtml = computeFn();
+  setTimeout(() => {
+    spinner.classList.add('spinner-hidden');
+    label.style.visibility = '';
+    btn.disabled = false;
+    document.getElementById(resultId).innerHTML = resultHtml;
+  }, SPINNER_MS);
+}
+
 // ── Find first time ─────────────────────────────────────────────────────
 document.getElementById('btn-findtime').addEventListener('click', () => {
-  withSpinner('spinner-findtime', 'btn-findtime', SPINNER_MS, () => {
-    if (!currentOsc) {
-      document.getElementById('result-findtime').innerHTML =
-        '<span class="res-none">Run Update first.</span>';
-      return;
-    }
+  spinThenShow('btn-findtime', 'spinner-findtime', 'result-findtime', () => {
+    if (!currentOsc) return '<span class="res-none">Run Update first.</span>';
     const mass   = parseInt(document.getElementById('u-mass').value, 10);
     const qty    = document.getElementById('u-qty').value;
     const target = parseFloat(document.getElementById('u-target').value);
@@ -722,39 +735,26 @@ document.getElementById('btn-findtime').addEventListener('click', () => {
     const tMin   = parseFloat(document.getElementById('u-tsearch-min').value) || 0;
     const tMax   = parseFloat(document.getElementById('u-tsearch-max').value) || 100;
     const result = currentOsc.firstTimeTo(mass, qty, target, { tMin, tMax, tolerance: tol, dt: 0.005 });
-    const box = document.getElementById('result-findtime');
     const qLabel = qty==='x' ? 'position' : qty==='v' ? 'velocity' : 'acceleration';
     if (result === null) {
-      box.innerHTML = `<span class="res-none">Not found in [${tMin}, ${tMax}].</span>`;
-    } else {
-      box.innerHTML =
-        `<span class="res-label">First time mass ${mass} ${qLabel} = ${target}:</span><br>` +
-        `<span class="res-value">t ≈ ${result.toFixed(8)}</span>`;
+      return `<span class="res-none">Not found in [${tMin}, ${tMax}].</span>`;
     }
+    return `<span class="res-label">First time mass ${mass} ${qLabel} = ${target}:</span><br>` +
+           `<span class="res-value">t ≈ ${result.toFixed(8)}</span>`;
   });
 });
 
 // ── Value at time ───────────────────────────────────────────────────────
 document.getElementById('btn-valattime').addEventListener('click', () => {
-  withSpinner('spinner-valattime', 'btn-valattime', SPINNER_MS, () => {
+  spinThenShow('btn-valattime', 'spinner-valattime', 'result-valattime', () => {
     const tInput = document.getElementById('u-time').value.trim();
-    const box = document.getElementById('result-valattime');
-    if (tInput === '') {
-      box.innerHTML = '<span class="res-none">Enter a time value above, then click Compute.</span>';
-      return;
-    }
-    if (!currentOsc) {
-      box.innerHTML = '<span class="res-none">Run Update first.</span>';
-      return;
-    }
+    if (tInput === '') return '<span class="res-none">Enter a time value above, then click Compute.</span>';
+    if (!currentOsc) return '<span class="res-none">Run Update first.</span>';
     const t = parseFloat(tInput);
-    if (!Number.isFinite(t)) {
-      box.innerHTML = '<span class="res-none">Invalid time value.</span>';
-      return;
-    }
+    if (!Number.isFinite(t)) return '<span class="res-none">Invalid time value.</span>';
     const v = currentOsc.valueAtTime(t);
     const fmt = n => n.toFixed(8);
-    box.innerHTML = `
+    return `
       <table class="val-table">
         <thead><tr><th>Quantity</th><th>Mass 1</th><th>Mass 2</th></tr></thead>
         <tbody>

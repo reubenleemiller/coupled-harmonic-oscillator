@@ -25,7 +25,7 @@
 
   <!-- ── Diagram ────────────────────────────────────────────────── -->
   <div style="text-align:center; margin-bottom:1rem;">
-    <svg class="diagram-svg" viewBox="0 0 680 70" xmlns="http://www.w3.org/2000/svg">
+    <svg id="svg-three-spring" class="diagram-svg" viewBox="0 0 410 70" xmlns="http://www.w3.org/2000/svg">
       <!-- wall left -->
       <rect x="0" y="10" width="10" height="50" fill="#4f8ef7" rx="2"/>
       <!-- spring k1 -->
@@ -49,6 +49,24 @@
       <!-- wall right -->
       <rect x="390" y="10" width="10" height="50" fill="#4f8ef7" rx="2"/>
     </svg>
+    <svg id="svg-two-spring" class="diagram-svg" viewBox="0 0 310 70" xmlns="http://www.w3.org/2000/svg" style="display:none">
+      <!-- wall left -->
+      <rect x="0" y="10" width="10" height="50" fill="#4f8ef7" rx="2"/>
+      <!-- spring k1 -->
+      <polyline points="10,35 30,35 35,20 45,50 55,20 65,50 75,20 85,50 90,35 110,35"
+                fill="none" stroke="#8892aa" stroke-width="2"/>
+      <text x="48" y="68" font-size="12" fill="#8892aa" text-anchor="middle">k₁</text>
+      <!-- mass 1 -->
+      <rect x="110" y="20" width="40" height="30" fill="#4f8ef7" rx="4"/>
+      <text x="130" y="40" font-size="14" fill="white" text-anchor="middle" font-weight="bold">m₁</text>
+      <!-- spring k2 -->
+      <polyline points="150,35 170,35 175,20 185,50 195,20 205,50 215,20 225,50 230,35 250,35"
+                fill="none" stroke="#8892aa" stroke-width="2"/>
+      <text x="210" y="68" font-size="12" fill="#8892aa" text-anchor="middle">k₂</text>
+      <!-- mass 2 (free end) -->
+      <rect x="250" y="20" width="40" height="30" fill="#f76f4f" rx="4"/>
+      <text x="270" y="40" font-size="14" fill="white" text-anchor="middle" font-weight="bold">m₂</text>
+    </svg>
   </div>
 
   <!-- ── Main grid ───────────────────────────────────────────────── -->
@@ -59,6 +77,15 @@
       <div class="card">
         <h2>Parameters</h2>
         <div class="param-grid">
+
+          <div class="section-label">Configuration</div>
+          <div class="param-group" style="grid-column:1/-1;">
+            <label for="p-config">Spring model</label>
+            <select id="p-config" class="plot-select" style="width:100%;">
+              <option value="three-spring">3-spring: wall – m₁ – m₂ – wall</option>
+              <option value="two-spring">2-spring: wall – m₁ – m₂ (free end)</option>
+            </select>
+          </div>
 
           <div class="section-label">Masses</div>
           <div class="param-group">
@@ -79,7 +106,7 @@
             <label for="p-k2">k₂ (coupling)</label>
             <input type="number" id="p-k2" value="0.5" min="0" step="0.1" />
           </div>
-          <div class="param-group" style="grid-column:1/-1;">
+          <div class="param-group" style="grid-column:1/-1;" id="k3-field">
             <label for="p-k3">k₃ (right spring)</label>
             <input type="number" id="p-k3" value="1" min="0" step="0.1" />
           </div>
@@ -125,13 +152,17 @@
     <section>
 
       <!-- Analytic solution -->
-      <div class="card" style="margin-bottom:1rem;">
+      <div class="card" style="margin-bottom:1rem; position:relative;">
         <h2>Analytic Solution</h2>
+        <div class="plot-spinner-overlay" id="solution-spinner">
+          <div class="big-spinner"></div>
+          <p>Loading…</p>
+        </div>
 
         <div class="omega-row" id="omega-row">
-          <span>ω₁ ≈ <strong id="disp-w1">–</strong> rad/s</span>
-          <span>ω₂ ≈ <strong id="disp-w2">–</strong> rad/s</span>
-          <span style="margin-left:auto; color:var(--clr-muted); font-size:0.78rem;">undamped, 3-spring model</span>
+          <span id="disp-w1">–</span>
+          <span id="disp-w2">–</span>
+          <span style="margin-left:auto; color:var(--clr-muted); font-size:0.78rem;" id="model-label">undamped, 3-spring model</span>
         </div>
 
         <div class="solution-grid" style="margin-top:0.6rem;" id="solution-grid">
@@ -148,14 +179,16 @@
       <div class="card">
         <h2>Plots</h2>
         <div class="plot-tabs">
-          <button class="tab-btn active" data-tab="pos">Position</button>
-          <button class="tab-btn" data-tab="vel">Velocity</button>
-          <button class="tab-btn" data-tab="acc">Acceleration</button>
-          <button class="tab-btn" data-tab="all">All</button>
+          <select id="plot-select" class="plot-select">
+            <option value="pos" selected>Position</option>
+            <option value="vel">Velocity</option>
+            <option value="acc">Acceleration</option>
+            <option value="all">All</option>
+          </select>
         </div>
         <div class="plot-container" id="plot-container">
           <!-- Plot spinner (unique, overlaid) -->
-          <div class="plot-spinner-overlay plot-hidden" id="plot-spinner">
+          <div class="plot-spinner-overlay" id="plot-spinner">
             <div class="big-spinner"></div>
             <p>Computing…</p>
           </div>
@@ -385,14 +418,31 @@ class CoupledOscillator {
   }
 }
 
-// ── LaTeX generation ────────────────────────────────────────────────────
-function omegaStr(w) {
-  const { num, den } = decimalToFraction(w, 1000, 1e-6);
-  if (den === 1) return `${num}`;
-  if (den <= 100) return fracToLatex(num, den);
+// ── Minimum spinner duration ────────────────────────────────────────────
+const SPINNER_MS = 2000;
+
+// ── Omega in radical / exact form ────────────────────────────────────────
+/**
+ * Return a KaTeX-ready string for an angular frequency w.
+ *  - If w is rational with denominator ≤ 100, return an exact fraction.
+ *  - If w² is rational with denominator ≤ 1000, return √(p/q) radical form.
+ *  - Otherwise fall back to a 5-significant-figure decimal string.
+ */
+function omegaRadicalLatex(w) {
+  if (Math.abs(w) < 1e-14) return '0';
+  // Check if w itself is rational with a small denominator (≤ 100)
+  const { num: on, den: od } = decimalToFraction(w, 100, 1e-9);
+  if (Math.abs(on / od - w) < 1e-9) return fracToLatex(on, od);
+  // Try radical form  ω = √(p/q)  where p/q has denominator ≤ 1000
+  const lam = w * w;
+  const { num: ln, den: ld } = decimalToFraction(lam, 1000, 1e-8);
+  if (Math.abs(ln / ld - lam) < 1e-7)
+    return ld === 1 ? `\\sqrt{${ln}}` : `\\sqrt{\\frac{${ln}}{${ld}}}`;
+  // Fallback to 5-significant-figure decimal
   return w.toPrecision(5).replace(/\.?0+$/, '');
 }
 
+// ── LaTeX generation ────────────────────────────────────────────────────
 function buildExpr(terms) {
   const parts = []; let first = true;
   for (const { coeff, trig, wLabel } of terms) {
@@ -411,7 +461,9 @@ function buildExpr(terms) {
 
 function generateLatex(osc) {
   const { omega1: w1, omega2: w2, coeffs1: c1, coeffs2: c2 } = osc;
-  const wl1 = '\\omega_1', wl2 = '\\omega_2';
+  // Substitute actual ω values in radical form instead of ω₁/ω₂ symbols
+  const wl1 = omegaRadicalLatex(w1);
+  const wl2 = omegaRadicalLatex(w2);
   function solve(c) {
     return {
       x: buildExpr([
@@ -435,11 +487,7 @@ function generateLatex(osc) {
     };
   }
   const s1=solve(c1), s2=solve(c2);
-  return {
-    omega1: omegaStr(w1), omega2: omegaStr(w2),
-    x1:s1.x, v1:s1.v, a1:s1.a,
-    x2:s2.x, v2:s2.v, a2:s2.a,
-  };
+  return { x1:s1.x, v1:s1.v, a1:s1.a, x2:s2.x, v2:s2.v, a2:s2.a };
 }
 
 // ── Chart instances ─────────────────────────────────────────────────────
@@ -546,23 +594,6 @@ function withSpinner(spinnerId, btnId, minMs, fn) {
   } catch (e) { finish(); throw e; }
 }
 
-function withPlotSpinner(minMs, fn) {
-  const overlay = document.getElementById('plot-spinner');
-  overlay.classList.remove('plot-hidden');
-  const start = Date.now();
-  return new Promise(resolve => {
-    // Use requestAnimationFrame so the spinner renders before computation
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      const result = fn();
-      const elapsed = Date.now() - start;
-      setTimeout(() => {
-        overlay.classList.add('plot-hidden');
-        resolve(result);
-      }, Math.max(0, minMs - elapsed));
-    }));
-  });
-}
-
 // ── KaTeX rendering ─────────────────────────────────────────────────────
 function renderKatex(elId, latex) {
   const el = document.getElementById(elId);
@@ -574,66 +605,103 @@ function renderKatex(elId, latex) {
   }
 }
 
+// ── Config change ───────────────────────────────────────────────────────
+function onConfigChange() {
+  const cfg = document.getElementById('p-config').value;
+  const k3Field   = document.getElementById('k3-field');
+  const svgThree  = document.getElementById('svg-three-spring');
+  const svgTwo    = document.getElementById('svg-two-spring');
+  const modelLabel = document.getElementById('model-label');
+  if (k3Field)    k3Field.style.display    = cfg === 'three-spring' ? '' : 'none';
+  if (svgThree)   svgThree.style.display   = cfg === 'three-spring' ? '' : 'none';
+  if (svgTwo)     svgTwo.style.display     = cfg === 'two-spring'   ? '' : 'none';
+  if (modelLabel) modelLabel.textContent   = cfg === 'three-spring'
+                    ? 'undamped, 3-spring model' : 'undamped, 2-spring model';
+}
+
 // ── Global oscillator state ─────────────────────────────────────────────
 let currentOsc = null;
 
 function readParams() {
   const g = id => parseFloat(document.getElementById(id).value) || 0;
+  const config = document.getElementById('p-config').value;
   return {
     m1:  Math.max(0.001, g('p-m1')),
     m2:  Math.max(0.001, g('p-m2')),
     k1:  Math.max(0,     g('p-k1')),
     k2:  Math.max(0,     g('p-k2')),
-    k3:  Math.max(0,     g('p-k3')),
+    k3:  config === 'two-spring' ? 0 : Math.max(0, g('p-k3')),
     x10: g('p-x10'), x20: g('p-x20'),
     v10: g('p-v10'), v20: g('p-v20'),
   };
 }
 
 function updateAll() {
-  return withSpinner('spinner-update', 'btn-update', 2000, () => {
+  const solutionOverlay = document.getElementById('solution-spinner');
+  const plotOverlay     = document.getElementById('plot-spinner');
+  // Show both content overlays while computing
+  solutionOverlay.classList.remove('plot-hidden');
+  plotOverlay.classList.remove('plot-hidden');
+
+  return withSpinner('spinner-update', 'btn-update', SPINNER_MS, () => {
     const params = readParams();
     currentOsc = new CoupledOscillator(params);
+    const lt   = generateLatex(currentOsc);
 
-    // Update LaTeX
-    const lt = generateLatex(currentOsc);
-    document.getElementById('disp-w1').textContent =
-      currentOsc.omega1.toFixed(5).replace(/\.?0+$/, '') + '';
-    document.getElementById('disp-w2').textContent =
-      currentOsc.omega2.toFixed(5).replace(/\.?0+$/, '') + '';
-
-    renderKatex('sol-x1', lt.x1);
-    renderKatex('sol-v1', lt.v1);
-    renderKatex('sol-a1', lt.a1);
-    renderKatex('sol-x2', lt.x2);
-    renderKatex('sol-v2', lt.v2);
-    renderKatex('sol-a2', lt.a2);
-
-    // Update plots with its own spinner
     const tmax  = parseFloat(document.getElementById('p-tmax').value)  || 30;
     const steps = parseInt(document.getElementById('p-steps').value, 10) || 600;
     const tArr  = Array.from({length: steps+1}, (_,i) => i * tmax / steps);
 
-    withPlotSpinner(2000, () => {
-      CHART_IDS.forEach(id => buildOrUpdateChart(id, currentOsc, tArr));
+    const start = Date.now();
+    return new Promise(resolve => {
+      // Let the browser paint the spinners before heavy work
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        try {
+          // Render omega display with radical form
+          renderKatex('disp-w1', `\\omega_1 = ${omegaRadicalLatex(currentOsc.omega1)}`);
+          renderKatex('disp-w2', `\\omega_2 = ${omegaRadicalLatex(currentOsc.omega2)}`);
+
+          // Render solution expressions
+          renderKatex('sol-x1', lt.x1);
+          renderKatex('sol-v1', lt.v1);
+          renderKatex('sol-a1', lt.a1);
+          renderKatex('sol-x2', lt.x2);
+          renderKatex('sol-v2', lt.v2);
+          renderKatex('sol-a2', lt.a2);
+
+          // Render charts
+          CHART_IDS.forEach(id => buildOrUpdateChart(id, currentOsc, tArr));
+        } catch (e) {
+          console.error('Render error:', e);
+        }
+
+        // Enforce 2 s minimum then reveal content
+        const elapsed = Date.now() - start;
+        setTimeout(() => {
+          solutionOverlay.classList.add('plot-hidden');
+          plotOverlay.classList.add('plot-hidden');
+          resolve();
+        }, Math.max(0, SPINNER_MS - elapsed));
+      }));
     });
   });
 }
 
-// ── Tab toggle ──────────────────────────────────────────────────────────
-document.querySelectorAll('.tab-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    const tab = btn.dataset.tab;
-    document.querySelectorAll('.chart-canvas').forEach(c => c.classList.remove('active'));
-    document.getElementById(`chart-${tab}`).classList.add('active');
-  });
+// ── Plot dropdown ───────────────────────────────────────────────────────
+document.getElementById('plot-select').addEventListener('change', function () {
+  document.querySelectorAll('.chart-canvas').forEach(c => c.classList.remove('active'));
+  document.getElementById(`chart-${this.value}`).classList.add('active');
+});
+
+// ── Config dropdown ─────────────────────────────────────────────────────
+document.getElementById('p-config').addEventListener('change', () => {
+  onConfigChange();
+  updateAll();
 });
 
 // ── Find first time ─────────────────────────────────────────────────────
 document.getElementById('btn-findtime').addEventListener('click', () => {
-  withSpinner('spinner-findtime', 'btn-findtime', 2000, () => {
+  withSpinner('spinner-findtime', 'btn-findtime', SPINNER_MS, () => {
     if (!currentOsc) {
       document.getElementById('result-findtime').innerHTML =
         '<span class="res-none">Run Update first.</span>';
@@ -660,7 +728,7 @@ document.getElementById('btn-findtime').addEventListener('click', () => {
 
 // ── Value at time ───────────────────────────────────────────────────────
 document.getElementById('btn-valattime').addEventListener('click', () => {
-  withSpinner('spinner-valattime', 'btn-valattime', 2000, () => {
+  withSpinner('spinner-valattime', 'btn-valattime', SPINNER_MS, () => {
     const tInput = document.getElementById('u-time').value.trim();
     const box = document.getElementById('result-valattime');
     if (tInput === '') {
@@ -693,9 +761,9 @@ document.getElementById('btn-valattime').addEventListener('click', () => {
 // ── Update button ───────────────────────────────────────────────────────
 document.getElementById('btn-update').addEventListener('click', updateAll);
 
-// ── Initial render (after KaTeX loads) ─────────────────────────────────
+// ── Initial render (after KaTeX + Chart.js load) ────────────────────────
 window.addEventListener('load', () => {
-  // KaTeX auto-render triggers itself; we trigger our custom render
+  onConfigChange();
   updateAll();
 });
 </script>

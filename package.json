@@ -1,0 +1,14 @@
+{
+  "name": "coupled-harmonic-oscillator",
+  "version": "1.0.0",
+  "description": "Interactive coupled harmonic oscillator visualization tool",
+  "scripts": {
+    "test": "jest"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.23.0",
+    "@babel/preset-env": "^7.23.0",
+    "babel-jest": "^29.7.0",
+    "jest": "^29.7.0"
+  }
+}

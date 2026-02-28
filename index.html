@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Coupled Harmonic Oscillator</title>
+  <link rel="stylesheet" href="styles/main.css" />
+
+  <!-- KaTeX -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" />
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+</head>
+<body>
+<div class="page-wrapper">
+
+  <!-- ── Header ─────────────────────────────────────────────────── -->
+  <header>
+    <h1>Coupled Harmonic Oscillator</h1>
+    <p class="subtitle">Analytic solution &amp; interactive visualization of a two-mass spring system</p>
+  </header>
+
+  <!-- ── Diagram ────────────────────────────────────────────────── -->
+  <div style="text-align:center; margin-bottom:1rem;">
+    <svg class="diagram-svg" viewBox="0 0 680 70" xmlns="http://www.w3.org/2000/svg">
+      <!-- wall left -->
+      <rect x="0" y="10" width="10" height="50" fill="#4f8ef7" rx="2"/>
+      <!-- spring k1 -->
+      <polyline points="10,35 30,35 35,20 45,50 55,20 65,50 75,20 85,50 90,35 110,35"
+                fill="none" stroke="#8892aa" stroke-width="2"/>
+      <text x="48" y="68" font-size="12" fill="#8892aa" text-anchor="middle">k₁</text>
+      <!-- mass 1 -->
+      <rect x="110" y="20" width="40" height="30" fill="#4f8ef7" rx="4"/>
+      <text x="130" y="40" font-size="14" fill="white" text-anchor="middle" font-weight="bold">m₁</text>
+      <!-- spring k2 -->
+      <polyline points="150,35 170,35 175,20 185,50 195,20 205,50 215,20 225,50 230,35 250,35"
+                fill="none" stroke="#8892aa" stroke-width="2"/>
+      <text x="210" y="68" font-size="12" fill="#8892aa" text-anchor="middle">k₂</text>
+      <!-- mass 2 -->
+      <rect x="250" y="20" width="40" height="30" fill="#f76f4f" rx="4"/>
+      <text x="270" y="40" font-size="14" fill="white" text-anchor="middle" font-weight="bold">m₂</text>
+      <!-- spring k3 -->
+      <polyline points="290,35 310,35 315,20 325,50 335,20 345,50 355,20 365,50 370,35 390,35"
+                fill="none" stroke="#8892aa" stroke-width="2"/>
+      <text x="350" y="68" font-size="12" fill="#8892aa" text-anchor="middle">k₃</text>
+      <!-- wall right -->
+      <rect x="390" y="10" width="10" height="50" fill="#4f8ef7" rx="2"/>
+    </svg>
+  </div>
+
+  <!-- ── Main grid ───────────────────────────────────────────────── -->
+  <div class="main-grid">
+
+    <!-- ── LEFT: Parameters ──────────────────────────────────────── -->
+    <aside>
+      <div class="card">
+        <h2>Parameters</h2>
+        <div class="param-grid">
+
+          <div class="section-label">Masses</div>
+          <div class="param-group">
+            <label for="p-m1">m₁ (mass 1)</label>
+            <input type="number" id="p-m1" value="1" min="0.01" step="0.1" />
+          </div>
+          <div class="param-group">
+            <label for="p-m2">m₂ (mass 2)</label>
+            <input type="number" id="p-m2" value="1" min="0.01" step="0.1" />
+          </div>
+
+          <div class="section-label">Spring Constants</div>
+          <div class="param-group">
+            <label for="p-k1">k₁ (left spring)</label>
+            <input type="number" id="p-k1" value="1" min="0" step="0.1" />
+          </div>
+          <div class="param-group">
+            <label for="p-k2">k₂ (coupling)</label>
+            <input type="number" id="p-k2" value="0.5" min="0" step="0.1" />
+          </div>
+          <div class="param-group" style="grid-column:1/-1;">
+            <label for="p-k3">k₃ (right spring)</label>
+            <input type="number" id="p-k3" value="1" min="0" step="0.1" />
+          </div>
+
+          <div class="section-label">Initial Conditions</div>
+          <div class="param-group">
+            <label for="p-x10">x₁(0)</label>
+            <input type="number" id="p-x10" value="1" step="0.1" />
+          </div>
+          <div class="param-group">
+            <label for="p-x20">x₂(0)</label>
+            <input type="number" id="p-x20" value="0" step="0.1" />
+          </div>
+          <div class="param-group">
+            <label for="p-v10">v₁(0)</label>
+            <input type="number" id="p-v10" value="0" step="0.1" />
+          </div>
+          <div class="param-group">
+            <label for="p-v20">v₂(0)</label>
+            <input type="number" id="p-v20" value="0" step="0.1" />
+          </div>
+
+          <div class="section-label">Time Range</div>
+          <div class="param-group">
+            <label for="p-tmax">t<sub>max</sub></label>
+            <input type="number" id="p-tmax" value="30" min="1" step="1" />
+          </div>
+          <div class="param-group">
+            <label for="p-steps">Plot points</label>
+            <input type="number" id="p-steps" value="600" min="50" max="2000" step="50" />
+          </div>
+
+        </div><!-- /param-grid -->
+
+        <button id="btn-update" class="btn btn-primary btn-full">
+          <span class="spinner spinner-hidden" id="spinner-update"></span>
+          Update
+        </button>
+      </div><!-- /card -->
+    </aside>
+
+    <!-- ── RIGHT: Results ────────────────────────────────────────── -->
+    <section>
+
+      <!-- Analytic solution -->
+      <div class="card" style="margin-bottom:1rem;">
+        <h2>Analytic Solution</h2>
+
+        <div class="omega-row" id="omega-row">
+          <span>ω₁ ≈ <strong id="disp-w1">–</strong> rad/s</span>
+          <span>ω₂ ≈ <strong id="disp-w2">–</strong> rad/s</span>
+          <span style="margin-left:auto; color:var(--clr-muted); font-size:0.78rem;">undamped, 3-spring model</span>
+        </div>
+
+        <div class="solution-grid" style="margin-top:0.6rem;" id="solution-grid">
+          <div class="sol-row"><span class="sol-label">x₁(t) =</span><span id="sol-x1">–</span></div>
+          <div class="sol-row"><span class="sol-label">x₂(t) =</span><span id="sol-x2">–</span></div>
+          <div class="sol-row"><span class="sol-label">v₁(t) =</span><span id="sol-v1">–</span></div>
+          <div class="sol-row"><span class="sol-label">v₂(t) =</span><span id="sol-v2">–</span></div>
+          <div class="sol-row"><span class="sol-label">a₁(t) =</span><span id="sol-a1">–</span></div>
+          <div class="sol-row"><span class="sol-label">a₂(t) =</span><span id="sol-a2">–</span></div>
+        </div>
+      </div>
+
+      <!-- Plots -->
+      <div class="card">
+        <h2>Plots</h2>
+        <div class="plot-tabs">
+          <button class="tab-btn active" data-tab="pos">Position</button>
+          <button class="tab-btn" data-tab="vel">Velocity</button>
+          <button class="tab-btn" data-tab="acc">Acceleration</button>
+          <button class="tab-btn" data-tab="all">All</button>
+        </div>
+        <div class="plot-container" id="plot-container">
+          <!-- Plot spinner (unique, overlaid) -->
+          <div class="plot-spinner-overlay plot-hidden" id="plot-spinner">
+            <div class="big-spinner"></div>
+            <p>Computing…</p>
+          </div>
+          <canvas id="chart-pos" class="chart-canvas active"></canvas>
+          <canvas id="chart-vel" class="chart-canvas"></canvas>
+          <canvas id="chart-acc" class="chart-canvas"></canvas>
+          <canvas id="chart-all" class="chart-canvas"></canvas>
+        </div>
+      </div>
+
+    </section>
+  </div><!-- /main-grid -->
+
+  <!-- ── Analysis Utilities ────────────────────────────────────────── -->
+  <div class="util-grid">
+
+    <!-- Find first time to target -->
+    <div class="card util-card">
+      <h2>Find First Time to Target</h2>
+      <div class="util-form">
+        <div class="param-group">
+          <label for="u-mass">Mass</label>
+          <select id="u-mass" style="width:100%; background:var(--clr-surface); border:1px solid var(--clr-border); border-radius:5px; color:var(--clr-text); padding:0.35rem 0.5rem; font-size:0.88rem; outline:none;">
+            <option value="1">Mass 1</option>
+            <option value="2">Mass 2</option>
+          </select>
+        </div>
+        <div class="param-group">
+          <label for="u-qty">Quantity</label>
+          <select id="u-qty" style="width:100%; background:var(--clr-surface); border:1px solid var(--clr-border); border-radius:5px; color:var(--clr-text); padding:0.35rem 0.5rem; font-size:0.88rem; outline:none;">
+            <option value="x">Position (x)</option>
+            <option value="v">Velocity (v)</option>
+            <option value="a">Acceleration (a)</option>
+          </select>
+        </div>
+        <div class="param-group">
+          <label for="u-target">Target value</label>
+          <input type="number" id="u-target" value="0" step="0.1" />
+        </div>
+        <div class="param-group">
+          <label for="u-tol">Tolerance</label>
+          <input type="number" id="u-tol" value="1e-6" step="1e-7" />
+        </div>
+        <div class="param-group">
+          <label for="u-tsearch-min">Search t<sub>min</sub></label>
+          <input type="number" id="u-tsearch-min" value="0" min="0" step="1" />
+        </div>
+        <div class="param-group">
+          <label for="u-tsearch-max">Search t<sub>max</sub></label>
+          <input type="number" id="u-tsearch-max" value="100" min="1" step="1" />
+        </div>
+      </div>
+      <button id="btn-findtime" class="btn btn-primary btn-full">
+        <span class="spinner spinner-hidden" id="spinner-findtime"></span>
+        Find First Time
+      </button>
+      <div class="result-box" id="result-findtime">
+        <span class="res-none">—</span>
+      </div>
+    </div>
+
+    <!-- Value at time -->
+    <div class="card util-card">
+      <h2>Values at Specified Time</h2>
+      <div class="util-form">
+        <div class="param-group full-width">
+          <label for="u-time">Time t (optional)</label>
+          <input type="number" id="u-time" placeholder="e.g. 3.14" step="0.01" />
+        </div>
+      </div>
+      <button id="btn-valattime" class="btn btn-secondary btn-full">
+        <span class="spinner spinner-hidden" id="spinner-valattime"></span>
+        Compute Values
+      </button>
+      <div class="result-box" id="result-valattime">
+        <span class="res-none">Enter a time value above, then click Compute.</span>
+      </div>
+    </div>
+
+  </div><!-- /util-grid -->
+
+</div><!-- /page-wrapper -->
+
+<!-- ── Inline scripts (loaded after DOM) ─────────────────────────────── -->
+<script type="module">
+// ── Fraction utilities (inline, no bundler needed) ──────────────────────
+function gcd(a, b) {
+  a = Math.abs(Math.round(a)); b = Math.abs(Math.round(b));
+  while (b) { const t = b; b = a % b; a = t; }
+  return a || 1;
+}
+
+function reduceFraction(num, den) {
+  if (den === 0) return { num: Infinity, den: 1 };
+  if (num === 0) return { num: 0, den: 1 };
+  const sign = (num < 0) !== (den < 0) ? -1 : 1;
+  const a = Math.abs(Math.round(num)), b = Math.abs(Math.round(den));
+  const g = gcd(a, b);
+  return { num: sign * (a / g), den: b / g };
+}
+
+function decimalToFraction(x, maxDen = 10000, tol = 1e-9) {
+  if (!Number.isFinite(x)) return { num: x > 0 ? Infinity : -Infinity, den: 1 };
+  if (Math.abs(x) < tol) return { num: 0, den: 1 };
+  const sign = x < 0 ? -1 : 1;
+  x = Math.abs(x);
+  let lo_n = 0, lo_d = 1, hi_n = 1, hi_d = 0;
+  let best_n = Math.round(x), best_d = 1, bestErr = Math.abs(x - best_n);
+  for (let i = 0; i < 200; i++) {
+    const mn = lo_n + hi_n, md = lo_d + hi_d;
+    if (md > maxDen) break;
+    const mv = mn / md, err = Math.abs(x - mv);
+    if (err < bestErr) { bestErr = err; best_n = mn; best_d = md; }
+    if (err < tol) break;
+    if (mv < x) { lo_n = mn; lo_d = md; } else { hi_n = mn; hi_d = md; }
+  }
+  return reduceFraction(sign * best_n, best_d);
+}
+
+function fracToLatex(num, den, opts = {}) {
+  const { showPlus = false, skipOne = false } = opts;
+  if (num === 0) return '0';
+  const sign = num < 0 ? '-' : showPlus ? '+' : '';
+  const a = Math.abs(num), b = Math.abs(den);
+  let mag;
+  if (b === 1) { mag = (a === 1 && skipOne) ? '' : `${a}`; }
+  else { mag = `\\frac{${a}}{${b}}`; }
+  return sign + mag;
+}
+
+function decimalToLatex(x, opts = {}) {
+  const { maxDen = 10000, ...fmtOpts } = opts;
+  const { num, den } = decimalToFraction(x, maxDen);
+  return fracToLatex(num, den, fmtOpts);
+}
+
+// ── Oscillator physics ──────────────────────────────────────────────────
+class CoupledOscillator {
+  constructor(p) {
+    Object.assign(this, p);
+    this._compute();
+  }
+  _compute() {
+    const { m1, m2, k1, k2, k3, x10, x20, v10, v20 } = this;
+    const a = (k1 + k2) / m1, b = (k2 + k3) / m2;
+    const c2 = (k2 * k2) / (m1 * m2);
+    const disc = Math.sqrt((a - b) ** 2 + 4 * c2);
+    const lam1 = ((a + b) - disc) / 2, lam2 = ((a + b) + disc) / 2;
+    this.omega1 = Math.sqrt(Math.max(0, lam1));
+    this.omega2 = Math.sqrt(Math.max(0, lam2));
+    this.r1 = Math.abs(k2) < 1e-14 ? 0 : (k1 + k2 - lam1 * m1) / k2;
+    this.r2 = Math.abs(k2) < 1e-14 ? 0 : (k1 + k2 - lam2 * m1) / k2;
+    if (Math.abs(k2) < 1e-14) {
+      const w1u = Math.sqrt(Math.max(0, k1/m1)), w2u = Math.sqrt(Math.max(0, k3/m2));
+      this.omega1 = w1u; this.omega2 = w2u;
+      this.r1 = 0; this.r2 = 0; this.A1 = x10; this.A2 = 0;
+      this.B1 = w1u > 1e-14 ? v10/w1u : 0; this.B2 = 0;
+      this.coeffs1 = { cw1: x10, sw1: this.B1, cw2: 0, sw2: 0 };
+      this.coeffs2 = { cw1: 0, sw1: 0, cw2: x20, sw2: w2u > 1e-14 ? v20/w2u : 0 };
+      return;
+    }
+    this.r1 = (k1 + k2 - lam1 * m1) / k2;
+    this.r2 = (k1 + k2 - lam2 * m1) / k2;
+    const { r1, r2, omega1: w1, omega2: w2 } = this;
+    const denom = r1 - r2;
+    if (Math.abs(denom) < 1e-14) {
+      this.A1 = x10; this.A2 = 0;
+    } else {
+      this.A1 = (x20 - r2 * x10) / denom;
+      this.A2 = x10 - this.A1;
+    }
+    if (Math.abs(denom) < 1e-14 || Math.abs(w1) < 1e-14) {
+      this.B1 = w1 > 1e-14 ? v10 / w1 : 0; this.B2 = 0;
+    } else {
+      this.B1 = (v20 - r2 * v10) / (w1 * denom);
+      this.B2 = w2 > 1e-14 ? (v10 - w1 * this.B1) / w2 : 0;
+    }
+    this.coeffs1 = { cw1: this.A1, sw1: this.B1, cw2: this.A2, sw2: this.B2 };
+    this.coeffs2 = { cw1: r1*this.A1, sw1: r1*this.B1, cw2: r2*this.A2, sw2: r2*this.B2 };
+  }
+  position(mass, t) {
+    const c = mass === 1 ? this.coeffs1 : this.coeffs2;
+    const { omega1: w1, omega2: w2 } = this;
+    return c.cw1*Math.cos(w1*t)+c.sw1*Math.sin(w1*t)+c.cw2*Math.cos(w2*t)+c.sw2*Math.sin(w2*t);
+  }
+  velocity(mass, t) {
+    const c = mass === 1 ? this.coeffs1 : this.coeffs2;
+    const { omega1: w1, omega2: w2 } = this;
+    return -c.cw1*w1*Math.sin(w1*t)+c.sw1*w1*Math.cos(w1*t)
+           -c.cw2*w2*Math.sin(w2*t)+c.sw2*w2*Math.cos(w2*t);
+  }
+  acceleration(mass, t) {
+    const c = mass === 1 ? this.coeffs1 : this.coeffs2;
+    const { omega1: w1, omega2: w2 } = this;
+    return -c.cw1*w1*w1*Math.cos(w1*t)-c.sw1*w1*w1*Math.sin(w1*t)
+           -c.cw2*w2*w2*Math.cos(w2*t)-c.sw2*w2*w2*Math.sin(w2*t);
+  }
+  valueAtTime(t) {
+    return {
+      x1: this.position(1,t), v1: this.velocity(1,t), a1: this.acceleration(1,t),
+      x2: this.position(2,t), v2: this.velocity(2,t), a2: this.acceleration(2,t),
+    };
+  }
+  firstTimeTo(mass, qty, target, opts = {}) {
+    const { tMin=0, tMax=100, dt=0.01, tolerance=1e-9 } = opts;
+    const fn = qty==='x' ? t=>this.position(mass,t)
+             : qty==='v' ? t=>this.velocity(mass,t)
+             : t=>this.acceleration(mass,t);
+    let prevT=tMin, prevF=fn(tMin)-target;
+    if (Math.abs(prevF) < tolerance) return tMin;
+    for (let t=tMin+dt; t<=tMax+dt*0.5; t+=dt) {
+      const curT=Math.min(t,tMax), curF=fn(curT)-target;
+      if (Math.abs(curF)<tolerance) return curT;
+      if (prevF*curF < 0) {
+        let lo=prevT, hi=curT;
+        for (let i=0;i<60;i++) {
+          const mid=(lo+hi)/2, mf=fn(mid)-target;
+          if (Math.abs(mf)<tolerance) return mid;
+          if (prevF*mf<=0) hi=mid; else { lo=mid; prevF=mf; }
+        }
+        return (lo+hi)/2;
+      }
+      prevT=curT; prevF=curF;
+      if (curT>=tMax) break;
+    }
+    return null;
+  }
+}
+
+// ── LaTeX generation ────────────────────────────────────────────────────
+function omegaStr(w) {
+  const { num, den } = decimalToFraction(w, 1000, 1e-6);
+  if (den === 1) return `${num}`;
+  if (den <= 100) return fracToLatex(num, den);
+  return w.toPrecision(5).replace(/\.?0+$/, '');
+}
+
+function buildExpr(terms) {
+  const parts = []; let first = true;
+  for (const { coeff, trig, wLabel } of terms) {
+    const { num, den } = decimalToFraction(coeff);
+    if (num === 0) continue;
+    const sign = num < 0 ? '-' : first ? '' : '+';
+    const a = Math.abs(num), b = Math.abs(den);
+    let mag;
+    if (b === 1) { mag = a === 1 ? '' : `${a}`; }
+    else { mag = `\\frac{${a}}{${b}}`; }
+    parts.push(`${sign}${mag}${trig}\\!\\left(${wLabel}\\,t\\right)`);
+    first = false;
+  }
+  return parts.length ? parts.join(' ') : '0';
+}
+
+function generateLatex(osc) {
+  const { omega1: w1, omega2: w2, coeffs1: c1, coeffs2: c2 } = osc;
+  const wl1 = '\\omega_1', wl2 = '\\omega_2';
+  function solve(c) {
+    return {
+      x: buildExpr([
+        {coeff:c.cw1, trig:'\\cos', wLabel:wl1},
+        {coeff:c.sw1, trig:'\\sin', wLabel:wl1},
+        {coeff:c.cw2, trig:'\\cos', wLabel:wl2},
+        {coeff:c.sw2, trig:'\\sin', wLabel:wl2},
+      ]),
+      v: buildExpr([
+        {coeff:-c.cw1*w1, trig:'\\sin', wLabel:wl1},
+        {coeff: c.sw1*w1, trig:'\\cos', wLabel:wl1},
+        {coeff:-c.cw2*w2, trig:'\\sin', wLabel:wl2},
+        {coeff: c.sw2*w2, trig:'\\cos', wLabel:wl2},
+      ]),
+      a: buildExpr([
+        {coeff:-c.cw1*w1*w1, trig:'\\cos', wLabel:wl1},
+        {coeff:-c.sw1*w1*w1, trig:'\\sin', wLabel:wl1},
+        {coeff:-c.cw2*w2*w2, trig:'\\cos', wLabel:wl2},
+        {coeff:-c.sw2*w2*w2, trig:'\\sin', wLabel:wl2},
+      ]),
+    };
+  }
+  const s1=solve(c1), s2=solve(c2);
+  return {
+    omega1: omegaStr(w1), omega2: omegaStr(w2),
+    x1:s1.x, v1:s1.v, a1:s1.a,
+    x2:s2.x, v2:s2.v, a2:s2.a,
+  };
+}
+
+// ── Chart instances ─────────────────────────────────────────────────────
+const charts = {};
+const CHART_IDS = ['pos','vel','acc','all'];
+
+function buildDatasets(osc, tArr, kind) {
+  const colors = ['#4f8ef7', '#f76f4f'];
+  const masses = [1, 2];
+  const labels = ['Mass 1', 'Mass 2'];
+  if (kind === 'all') {
+    const fns = [
+      { label: 'x₁', fn: t=>osc.position(1,t),     color:'#4f8ef7', dash:[] },
+      { label: 'x₂', fn: t=>osc.position(2,t),     color:'#f76f4f', dash:[] },
+      { label: 'v₁', fn: t=>osc.velocity(1,t),     color:'#4fccf7', dash:[5,3] },
+      { label: 'v₂', fn: t=>osc.velocity(2,t),     color:'#f7c44f', dash:[5,3] },
+      { label: 'a₁', fn: t=>osc.acceleration(1,t), color:'#a04ff7', dash:[2,2] },
+      { label: 'a₂', fn: t=>osc.acceleration(2,t), color:'#4ff76f', dash:[2,2] },
+    ];
+    return fns.map(({ label, fn, color, dash }) => ({
+      label,
+      data: tArr.map(fn),
+      borderColor: color,
+      borderWidth: 1.5,
+      borderDash: dash,
+      pointRadius: 0,
+      tension: 0.3,
+    }));
+  }
+  const fnForMass = kind === 'vel'
+    ? (m,t) => osc.velocity(m,t)
+    : kind === 'acc'
+    ? (m,t) => osc.acceleration(m,t)
+    : (m,t) => osc.position(m,t);
+  return masses.map((m, i) => ({
+    label: labels[i],
+    data: tArr.map(t => fnForMass(m,t)),
+    borderColor: colors[i],
+    borderWidth: 1.8,
+    pointRadius: 0,
+    tension: 0.3,
+  }));
+}
+
+const yLabels = { pos:'Displacement', vel:'Velocity', acc:'Acceleration', all:'Value' };
+
+function buildOrUpdateChart(id, osc, tArr) {
+  const canvas = document.getElementById(`chart-${id}`);
+  const datasets = buildDatasets(osc, tArr, id);
+  const data = { labels: tArr.map(t => t.toFixed(2)), datasets };
+  if (charts[id]) {
+    charts[id].data = data;
+    charts[id].update('none');
+    return;
+  }
+  charts[id] = new Chart(canvas, {
+    type: 'line',
+    data,
+    options: {
+      responsive: true,
+      animation: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { labels: { color: '#e2e8f0', font: { size: 12 } } },
+        tooltip: { mode: 'index' },
+      },
+      scales: {
+        x: {
+          ticks: { color:'#8892aa', maxTicksLimit:12,
+            callback(v,i){ return Number(this.getLabelForValue(i)).toFixed(1); } },
+          grid: { color:'rgba(255,255,255,0.05)' },
+          title: { display:true, text:'Time (t)', color:'#8892aa' },
+        },
+        y: {
+          ticks: { color:'#8892aa' },
+          grid: { color:'rgba(255,255,255,0.05)' },
+          title: { display:true, text: yLabels[id], color:'#8892aa' },
+        },
+      },
+    },
+  });
+}
+
+// ── Spinner helpers ─────────────────────────────────────────────────────
+function withSpinner(spinnerId, btnId, minMs, fn) {
+  const spinner = document.getElementById(spinnerId);
+  const btn     = document.getElementById(btnId);
+  spinner.classList.remove('spinner-hidden');
+  btn.disabled = true;
+  const start = Date.now();
+  const finish = (result) => {
+    const elapsed = Date.now() - start;
+    const wait = Math.max(0, minMs - elapsed);
+    setTimeout(() => {
+      spinner.classList.add('spinner-hidden');
+      btn.disabled = false;
+    }, wait);
+    return result;
+  };
+  try {
+    const r = fn();
+    if (r && typeof r.then === 'function') return r.then(finish, err => { finish(); throw err; });
+    return finish(r);
+  } catch (e) { finish(); throw e; }
+}
+
+function withPlotSpinner(minMs, fn) {
+  const overlay = document.getElementById('plot-spinner');
+  overlay.classList.remove('plot-hidden');
+  const start = Date.now();
+  return new Promise(resolve => {
+    // Use requestAnimationFrame so the spinner renders before computation
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      const result = fn();
+      const elapsed = Date.now() - start;
+      setTimeout(() => {
+        overlay.classList.add('plot-hidden');
+        resolve(result);
+      }, Math.max(0, minMs - elapsed));
+    }));
+  });
+}
+
+// ── KaTeX rendering ─────────────────────────────────────────────────────
+function renderKatex(elId, latex) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  try {
+    katex.render(latex, el, { throwOnError: false, displayMode: false });
+  } catch {
+    el.textContent = latex;
+  }
+}
+
+// ── Global oscillator state ─────────────────────────────────────────────
+let currentOsc = null;
+
+function readParams() {
+  const g = id => parseFloat(document.getElementById(id).value) || 0;
+  return {
+    m1:  Math.max(0.001, g('p-m1')),
+    m2:  Math.max(0.001, g('p-m2')),
+    k1:  Math.max(0,     g('p-k1')),
+    k2:  Math.max(0,     g('p-k2')),
+    k3:  Math.max(0,     g('p-k3')),
+    x10: g('p-x10'), x20: g('p-x20'),
+    v10: g('p-v10'), v20: g('p-v20'),
+  };
+}
+
+function updateAll() {
+  return withSpinner('spinner-update', 'btn-update', 2000, () => {
+    const params = readParams();
+    currentOsc = new CoupledOscillator(params);
+
+    // Update LaTeX
+    const lt = generateLatex(currentOsc);
+    document.getElementById('disp-w1').textContent =
+      currentOsc.omega1.toFixed(5).replace(/\.?0+$/, '') + '';
+    document.getElementById('disp-w2').textContent =
+      currentOsc.omega2.toFixed(5).replace(/\.?0+$/, '') + '';
+
+    renderKatex('sol-x1', lt.x1);
+    renderKatex('sol-v1', lt.v1);
+    renderKatex('sol-a1', lt.a1);
+    renderKatex('sol-x2', lt.x2);
+    renderKatex('sol-v2', lt.v2);
+    renderKatex('sol-a2', lt.a2);
+
+    // Update plots with its own spinner
+    const tmax  = parseFloat(document.getElementById('p-tmax').value)  || 30;
+    const steps = parseInt(document.getElementById('p-steps').value, 10) || 600;
+    const tArr  = Array.from({length: steps+1}, (_,i) => i * tmax / steps);
+
+    withPlotSpinner(2000, () => {
+      CHART_IDS.forEach(id => buildOrUpdateChart(id, currentOsc, tArr));
+    });
+  });
+}
+
+// ── Tab toggle ──────────────────────────────────────────────────────────
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const tab = btn.dataset.tab;
+    document.querySelectorAll('.chart-canvas').forEach(c => c.classList.remove('active'));
+    document.getElementById(`chart-${tab}`).classList.add('active');
+  });
+});
+
+// ── Find first time ─────────────────────────────────────────────────────
+document.getElementById('btn-findtime').addEventListener('click', () => {
+  withSpinner('spinner-findtime', 'btn-findtime', 2000, () => {
+    if (!currentOsc) {
+      document.getElementById('result-findtime').innerHTML =
+        '<span class="res-none">Run Update first.</span>';
+      return;
+    }
+    const mass   = parseInt(document.getElementById('u-mass').value, 10);
+    const qty    = document.getElementById('u-qty').value;
+    const target = parseFloat(document.getElementById('u-target').value);
+    const tol    = parseFloat(document.getElementById('u-tol').value) || 1e-6;
+    const tMin   = parseFloat(document.getElementById('u-tsearch-min').value) || 0;
+    const tMax   = parseFloat(document.getElementById('u-tsearch-max').value) || 100;
+    const result = currentOsc.firstTimeTo(mass, qty, target, { tMin, tMax, tolerance: tol, dt: 0.005 });
+    const box = document.getElementById('result-findtime');
+    const qLabel = qty==='x' ? 'position' : qty==='v' ? 'velocity' : 'acceleration';
+    if (result === null) {
+      box.innerHTML = `<span class="res-none">Not found in [${tMin}, ${tMax}].</span>`;
+    } else {
+      box.innerHTML =
+        `<span class="res-label">First time mass ${mass} ${qLabel} = ${target}:</span><br>` +
+        `<span class="res-value">t ≈ ${result.toFixed(8)}</span>`;
+    }
+  });
+});
+
+// ── Value at time ───────────────────────────────────────────────────────
+document.getElementById('btn-valattime').addEventListener('click', () => {
+  withSpinner('spinner-valattime', 'btn-valattime', 2000, () => {
+    const tInput = document.getElementById('u-time').value.trim();
+    const box = document.getElementById('result-valattime');
+    if (tInput === '') {
+      box.innerHTML = '<span class="res-none">Enter a time value above, then click Compute.</span>';
+      return;
+    }
+    if (!currentOsc) {
+      box.innerHTML = '<span class="res-none">Run Update first.</span>';
+      return;
+    }
+    const t = parseFloat(tInput);
+    if (!Number.isFinite(t)) {
+      box.innerHTML = '<span class="res-none">Invalid time value.</span>';
+      return;
+    }
+    const v = currentOsc.valueAtTime(t);
+    const fmt = n => n.toFixed(8);
+    box.innerHTML = `
+      <table class="val-table">
+        <thead><tr><th>Quantity</th><th>Mass 1</th><th>Mass 2</th></tr></thead>
+        <tbody>
+          <tr><td>Position x(${t})</td><td>${fmt(v.x1)}</td><td>${fmt(v.x2)}</td></tr>
+          <tr><td>Velocity v(${t})</td><td>${fmt(v.v1)}</td><td>${fmt(v.v2)}</td></tr>
+          <tr><td>Acceleration a(${t})</td><td>${fmt(v.a1)}</td><td>${fmt(v.a2)}</td></tr>
+        </tbody>
+      </table>`;
+  });
+});
+
+// ── Update button ───────────────────────────────────────────────────────
+document.getElementById('btn-update').addEventListener('click', updateAll);
+
+// ── Initial render (after KaTeX loads) ─────────────────────────────────
+window.addEventListener('load', () => {
+  // KaTeX auto-render triggers itself; we trigger our custom render
+  updateAll();
+});
+</script>
+</body>
+</html>

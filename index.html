@@ -143,7 +143,7 @@
 
         <button id="btn-update" class="btn btn-primary btn-full">
           <span class="spinner spinner-hidden" id="spinner-update"></span>
-          Update
+          <span class="btn-label">Update</span>
         </button>
       </div><!-- /card -->
     </aside>
@@ -577,7 +577,9 @@ function buildOrUpdateChart(id, osc, tArr) {
 function withSpinner(spinnerId, btnId, minMs, fn) {
   const spinner = document.getElementById(spinnerId);
   const btn     = document.getElementById(btnId);
+  const label   = btn.querySelector('.btn-label');
   spinner.classList.remove('spinner-hidden');
+  if (label) label.style.display = 'none';
   btn.disabled = true;
   const start = Date.now();
   const finish = (result) => {
@@ -585,6 +587,7 @@ function withSpinner(spinnerId, btnId, minMs, fn) {
     const wait = Math.max(0, minMs - elapsed);
     setTimeout(() => {
       spinner.classList.add('spinner-hidden');
+      if (label) label.style.display = '';
       btn.disabled = false;
     }, wait);
     return result;
@@ -713,12 +716,12 @@ function spinThenShow(btnId, spinnerId, resultId, computeFn) {
   const spinner = document.getElementById(spinnerId);
   const label = btn.querySelector('.btn-label');
   spinner.classList.remove('spinner-hidden');
-  label.style.visibility = 'hidden';
+  label.style.display = 'none';
   btn.disabled = true;
   const resultHtml = computeFn();
   setTimeout(() => {
     spinner.classList.add('spinner-hidden');
-    label.style.visibility = '';
+    label.style.display = '';
     btn.disabled = false;
     document.getElementById(resultId).innerHTML = resultHtml;
   }, SPINNER_MS);

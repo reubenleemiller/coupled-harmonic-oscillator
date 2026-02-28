@@ -154,9 +154,10 @@
       <!-- Analytic solution -->
       <div class="card" style="margin-bottom:1rem; position:relative;">
         <h2>Analytic Solution</h2>
-        <div class="plot-spinner-overlay" id="solution-spinner">
+        <div class="plot-spinner-overlay plot-spinner-overlay--idle" id="solution-spinner">
           <div class="big-spinner"></div>
-          <p>Loading…</p>
+          <p class="overlay-loading-msg">Computing…</p>
+          <p class="overlay-idle-msg">Press <strong>Update</strong> to compute.</p>
         </div>
 
         <div class="omega-row" id="omega-row">
@@ -188,9 +189,10 @@
         </div>
         <div class="plot-container" id="plot-container">
           <!-- Plot spinner (unique, overlaid) -->
-          <div class="plot-spinner-overlay" id="plot-spinner">
+          <div class="plot-spinner-overlay plot-spinner-overlay--idle" id="plot-spinner">
             <div class="big-spinner"></div>
-            <p>Computing…</p>
+            <p class="overlay-loading-msg">Computing…</p>
+            <p class="overlay-idle-msg">Press <strong>Update</strong> to load plots.</p>
           </div>
           <canvas id="chart-pos" class="chart-canvas active"></canvas>
           <canvas id="chart-vel" class="chart-canvas"></canvas>
@@ -640,8 +642,8 @@ function updateAll() {
   const solutionOverlay = document.getElementById('solution-spinner');
   const plotOverlay     = document.getElementById('plot-spinner');
   // Show both content overlays while computing
-  solutionOverlay.classList.remove('plot-hidden');
-  plotOverlay.classList.remove('plot-hidden');
+  solutionOverlay.classList.remove('plot-hidden', 'plot-spinner-overlay--idle');
+  plotOverlay.classList.remove('plot-hidden', 'plot-spinner-overlay--idle');
 
   return withSpinner('spinner-update', 'btn-update', SPINNER_MS, () => {
     const params = readParams();
@@ -671,6 +673,11 @@ function updateAll() {
 
           // Render charts
           CHART_IDS.forEach(id => buildOrUpdateChart(id, currentOsc, tArr));
+          // Enforce: only the selected chart is visible (Chart.js sets display:block on all)
+          const activeId = document.getElementById('plot-select').value;
+          CHART_IDS.forEach(id => {
+            document.getElementById(`chart-${id}`).style.display = (id === activeId) ? 'block' : 'none';
+          });
         } catch (e) {
           console.error('Render error:', e);
         }
@@ -689,8 +696,9 @@ function updateAll() {
 
 // ── Plot dropdown ───────────────────────────────────────────────────────
 document.getElementById('plot-select').addEventListener('change', function () {
-  document.querySelectorAll('.chart-canvas').forEach(c => c.classList.remove('active'));
-  document.getElementById(`chart-${this.value}`).classList.add('active');
+  const val = this.value;
+  document.querySelectorAll('.chart-canvas').forEach(c => { c.style.display = 'none'; });
+  document.getElementById(`chart-${val}`).style.display = 'block';
 });
 
 // ── Config dropdown ─────────────────────────────────────────────────────
@@ -764,7 +772,6 @@ document.getElementById('btn-update').addEventListener('click', updateAll);
 // ── Initial render (after KaTeX + Chart.js load) ────────────────────────
 window.addEventListener('load', () => {
   onConfigChange();
-  updateAll();
 });
 </script>
 </body>

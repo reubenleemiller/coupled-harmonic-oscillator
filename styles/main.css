@@ -313,7 +313,18 @@ header p.subtitle {
   background: var(--clr-card);
 }
 
+/* Plot spinner also needs opaque background so charts don't show through */
+#plot-spinner {
+  background: var(--clr-card);
+}
+
 .plot-hidden { display: none !important; }
+
+/* Idle overlay state: hide spinner animation, show idle message */
+.plot-spinner-overlay--idle .big-spinner { display: none; }
+.plot-spinner-overlay--idle .overlay-loading-msg { display: none; }
+.overlay-idle-msg { display: none; }
+.plot-spinner-overlay--idle .overlay-idle-msg { display: block; }
 
 /* Hide/show chart canvases */
 .chart-canvas { display: none; }

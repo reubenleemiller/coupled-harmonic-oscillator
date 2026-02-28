@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Coupled Harmonic Oscillator – Unit Tests</title>
+  <style>
+    body { font-family: monospace; max-width: 800px; margin: 24px auto; padding: 0 16px; background: #fafafa; color: #222; }
+    h1   { font-family: sans-serif; margin-bottom: 16px; }
+    #summary { font-family: sans-serif; font-size: 1.1rem; font-weight: bold; margin-bottom: 12px; }
+    #summary.all-pass { color: #188038; }
+    #summary.some-fail { color: #c5221f; }
+    #output { white-space: pre; background: #fff; border: 1px solid #ddd; padding: 12px 16px; border-radius: 6px; line-height: 1.7; overflow-x: auto; }
+    .pass { color: #188038; }
+    .fail { color: #c5221f; }
+  </style>
+  <!-- Load modules under test (no app.js – it needs the DOM from index.html) -->
+  <script src="fractions.js"></script>
+  <script src="physics.js"></script>
+</head>
+<body>
+  <h1>Unit Tests</h1>
+  <div id="summary"></div>
+  <pre id="output"></pre>
+
+  <script>
+    // ─── Tiny test runner ───────────────────────────────────────────────────
+    var passed = 0, failed = 0;
+    var outputEl = document.getElementById('output');
+
+    function test(name, fn) {
+      try {
+        fn();
+        passed++;
+        outputEl.innerHTML += '<span class="pass">✓ ' + name + '</span>\n';
+      } catch (e) {
+        failed++;
+        outputEl.innerHTML += '<span class="fail">✗ ' + name + ': ' + e.message + '</span>\n';
+      }
+    }
+
+    function assertEqual(a, b, msg) {
+      if (a !== b) throw new Error((msg ? msg + ' – ' : '') + 'expected ' + JSON.stringify(b) + ', got ' + JSON.stringify(a));
+    }
+
+    function assertClose(a, b, tol, msg) {
+      if (tol === undefined) tol = 1e-6;
+      if (Math.abs(a - b) > tol) {
+        throw new Error((msg ? msg + ' – ' : '') + 'expected ~' + b + ', got ' + a + ' (diff=' + Math.abs(a-b) + ')');
+      }
+    }
+
+    // ─── Fractions tests ─────────────────────────────────────────────────────
+
+    test('gcd(12, 8) === 4', function () {
+      assertEqual(Fractions.gcd(12, 8), 4);
+    });
+
+    test('gcd(7, 3) === 1', function () {
+      assertEqual(Fractions.gcd(7, 3), 1);
+    });
+
+    test('reduce({n:4, d:6}) → {n:2, d:3}', function () {
+      var r = Fractions.reduce({ n: 4, d: 6 });
+      assertEqual(r.n, 2, 'n'); assertEqual(r.d, 3, 'd');
+    });
+
+    test('reduce({n:-4, d:6}) → {n:-2, d:3}', function () {
+      var r = Fractions.reduce({ n: -4, d: 6 });
+      assertEqual(r.n, -2, 'n'); assertEqual(r.d, 3, 'd');
+    });
+
+    test('reduce({n:4, d:-6}) → {n:-2, d:3}', function () {
+      var r = Fractions.reduce({ n: 4, d: -6 });
+      assertEqual(r.n, -2, 'n'); assertEqual(r.d, 3, 'd');
+    });
+
+    test('toFraction(0.5, 100) → {n:1, d:2}', function () {
+      var f = Fractions.toFraction(0.5, 100);
+      assertEqual(f.n, 1, 'n'); assertEqual(f.d, 2, 'd');
+    });
+
+    test('toFraction(0.333, 100) → {n:1, d:3} (best approx)', function () {
+      var f = Fractions.toFraction(0.333, 100);
+      assertEqual(f.n, 1, 'n'); assertEqual(f.d, 3, 'd');
+    });
+
+    test('toFraction(0, 100) → {n:0, d:1}', function () {
+      var f = Fractions.toFraction(0, 100);
+      assertEqual(f.n, 0, 'n'); assertEqual(f.d, 1, 'd');
+    });
+
+    test('toFraction(3, 100) → {n:3, d:1}', function () {
+      var f = Fractions.toFraction(3, 100);
+      assertEqual(f.n, 3, 'n'); assertEqual(f.d, 1, 'd');
+    });
+
+    // ─── Physics tests ───────────────────────────────────────────────────────
+
+    // Test 10 – findFirstTime: x₁(t)=cos(t), first zero at t=π/2
+    test('findFirstTime: x₁=cos(t), first zero at t=π/2', function () {
+      // k2=0 decouples the masses; k1=k3=1, m1=m2=1 → ω=1
+      var r = Physics.solve({
+        config: 'three-spring',
+        m1: 1, m2: 1, k1: 1, k2: 0, k3: 1,
+        x10: 1, x20: 0, v10: 0, v20: 0
+      });
+      var ft = Physics.findFirstTime(r, 1, 'x', 0, 100, 1e-8);
+      assertEqual(ft.found, true, 'found');
+      assertClose(ft.t, Math.PI / 2, 1e-6, 't');
+    });
+
+    // Test 11 – symmetric decoupled case: omega1 = omega2 = 1
+    test('solve: symmetric decoupled (k2=0, k1=k3=1, m1=m2=1) → ω1=ω2=1', function () {
+      var r = Physics.solve({
+        config: 'three-spring',
+        m1: 1, m2: 1, k1: 1, k2: 0, k3: 1,
+        x10: 1, x20: 0, v10: 0, v20: 0
+      });
+      assertClose(r.omega1, 1, 1e-10, 'omega1');
+      assertClose(r.omega2, 1, 1e-10, 'omega2');
+      // x1(t) = cos(t), x2(t) = 0
+      assertClose(r.x1(0),            1, 1e-10, 'x1(0)');
+      assertClose(r.x2(0),            0, 1e-10, 'x2(0)');
+      assertClose(r.x1(Math.PI / 2),  0, 1e-10, 'x1(π/2)');
+      assertClose(r.x2(Math.PI),      0, 1e-10, 'x2(π)');
+    });
+
+    // Test 12 – three-spring symmetric: m1=m2=1, k1=k2=k3=1
+    //   → ω1=1, ω2=√3; x1(0)=1 (=x10), x2(0)=0 (=x20)
+    test('solve: three-spring m1=m2=k1=k2=k3=1, check ICs and frequencies', function () {
+      var r = Physics.solve({
+        config: 'three-spring',
+        m1: 1, m2: 1, k1: 1, k2: 1, k3: 1,
+        x10: 1, x20: 0, v10: 0, v20: 0
+      });
+      assertClose(r.omega1, 1,            1e-10, 'omega1');
+      assertClose(r.omega2, Math.sqrt(3), 1e-10, 'omega2');
+      assertClose(r.x1(0),  1, 1e-10, 'x1(0) = x10');
+      assertClose(r.x2(0),  0, 1e-10, 'x2(0) = x20');
+      assertClose(r.v1(0),  0, 1e-10, 'v1(0) = v10');
+      assertClose(r.v2(0),  0, 1e-10, 'v2(0) = v20');
+    });
+
+    // ─── Summary ─────────────────────────────────────────────────────────────
+    var summaryEl = document.getElementById('summary');
+    summaryEl.textContent = passed + ' passed, ' + failed + ' failed.';
+    summaryEl.className   = (failed === 0) ? 'all-pass' : 'some-fail';
+  </script>
+</body>
+</html>

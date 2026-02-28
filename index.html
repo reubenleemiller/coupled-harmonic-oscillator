@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Coupled Harmonic Oscillator</title>
+
+  <!-- KaTeX -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+
+  <!-- Local styles -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header>
+  <h1>Coupled Harmonic Oscillator</h1>
+</header>
+
+<main>
+
+  <!-- ── Configuration selector ─────────────────────────────────────────── -->
+  <section class="card" id="config-section">
+    <label>
+      Configuration:
+      <select id="config">
+        <option value="three-spring">Wall–k₁–m₁–k₂–m₂–k₃–Wall (3 springs)</option>
+        <option value="two-spring">Wall–k₁–m₁–k₂–m₂ (2 springs, free end)</option>
+      </select>
+    </label>
+  </section>
+
+  <!-- ── Parameters ─────────────────────────────────────────────────────── -->
+  <section class="card" id="params-section">
+    <h2>Parameters</h2>
+    <div class="params-grid">
+
+      <label>
+        Mass m₁
+        <input type="number" id="m1" value="1" step="0.1" min="0.01">
+      </label>
+
+      <label>
+        Mass m₂
+        <input type="number" id="m2" value="1" step="0.1" min="0.01">
+      </label>
+
+      <label>
+        Spring k₁
+        <input type="number" id="k1" value="1" step="0.1" min="0">
+      </label>
+
+      <label>
+        Spring k₂
+        <input type="number" id="k2" value="1" step="0.1" min="0">
+      </label>
+
+      <label id="k3-field">
+        Spring k₃
+        <input type="number" id="k3" value="1" step="0.1" min="0">
+      </label>
+
+      <label>
+        Max denominator
+        <input type="number" id="maxDen" value="100" step="1" min="1">
+      </label>
+
+      <label>
+        Initial x₁₀
+        <input type="number" id="x10" value="1" step="0.1">
+      </label>
+
+      <label>
+        Initial x₂₀
+        <input type="number" id="x20" value="0" step="0.1">
+      </label>
+
+      <label>
+        Initial v₁₀
+        <input type="number" id="v10" value="0" step="0.1">
+      </label>
+
+      <label>
+        Initial v₂₀
+        <input type="number" id="v20" value="0" step="0.1">
+      </label>
+
+      <label>
+        Plot t max
+        <input type="number" id="tMax" value="20" step="1" min="0.1">
+      </label>
+
+      <label>
+        Samples
+        <input type="number" id="samples" value="500" step="50" min="10">
+      </label>
+
+    </div>
+  </section>
+
+  <!-- ── Solve button ────────────────────────────────────────────────────── -->
+  <section class="card">
+    <button id="btn-solve" class="btn-primary">
+      <span class="spinner spinner--hidden"></span>
+      Solve &amp; Plot
+    </button>
+  </section>
+
+  <!-- ── Plot ───────────────────────────────────────────────────────────── -->
+  <section class="card" id="plot-section">
+    <h2>Plot</h2>
+    <div class="toggle-tabs">
+      <button class="toggle-btn active" data-toggle="position">Position</button>
+      <button class="toggle-btn"        data-toggle="velocity">Velocity</button>
+      <button class="toggle-btn"        data-toggle="acceleration">Acceleration</button>
+      <button class="toggle-btn"        data-toggle="all">All</button>
+    </div>
+    <div id="plot-container">
+      <div id="plot-overlay" class="plot-overlay" style="display:none">
+        <div class="spinner spinner--large"></div>
+      </div>
+      <div id="plot"></div>
+    </div>
+  </section>
+
+  <!-- ── Analytic solution (LaTeX) ──────────────────────────────────────── -->
+  <section class="card" id="latex-section">
+    <h2>Analytic Solution</h2>
+    <div id="latex-output">
+      <p class="placeholder">Solve to see analytic expressions.</p>
+    </div>
+  </section>
+
+  <!-- ── Utilities ──────────────────────────────────────────────────────── -->
+  <section class="card" id="utilities-section">
+    <h2>Utilities</h2>
+
+    <!-- Values at specified time -->
+    <div class="utility-block">
+      <h3>Values at Specified Time</h3>
+      <div class="util-inline">
+        <label for="util-time">t =</label>
+        <input type="number" id="util-time" value="1" step="0.1" min="0">
+      </div>
+      <button id="btn-values" class="btn-secondary">
+        <span class="spinner spinner--hidden"></span>
+        Compute
+      </button>
+      <div id="values-output"></div>
+    </div>
+
+    <!-- First time reaching target -->
+    <div class="utility-block">
+      <h3>First Time Reaching Target</h3>
+      <div class="utility-inputs">
+        <label>
+          Mass
+          <select id="util-mass">
+            <option value="1">m₁</option>
+            <option value="2">m₂</option>
+          </select>
+        </label>
+        <label>
+          Quantity
+          <select id="util-qty">
+            <option value="x">Position (x)</option>
+            <option value="v">Velocity (v)</option>
+            <option value="a">Acceleration (a)</option>
+          </select>
+        </label>
+        <label>
+          Target
+          <input type="number" id="util-target" value="0" step="0.1">
+        </label>
+        <label>
+          Search t max
+          <input type="number" id="util-tmax-search" value="100" step="1" min="0">
+        </label>
+        <label>
+          Tolerance
+          <input type="number" id="util-tol" value="1e-8" step="1e-9">
+        </label>
+      </div>
+      <button id="btn-find-time" class="btn-secondary">
+        <span class="spinner spinner--hidden"></span>
+        Find
+      </button>
+      <div id="find-time-output"></div>
+    </div>
+
+  </section>
+
+</main>
+
+<!-- KaTeX JS -->
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<!-- Plotly -->
+<script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+<!-- Local scripts (order matters) -->
+<script src="fractions.js"></script>
+<script src="physics.js"></script>
+<script src="app.js"></script>
+
+</body>
+</html>

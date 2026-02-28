@@ -1,0 +1,369 @@
+/* ─── Reset & Base ──────────────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #f0f2f5;
+  color: #333;
+  line-height: 1.5;
+}
+
+/* ─── Layout ─────────────────────────────────────────────────────────────────── */
+header {
+  background: #1a73e8;
+  color: #fff;
+  padding: 18px 24px;
+  text-align: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+header h1 {
+  font-size: 1.7rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+main {
+  max-width: 900px;
+  margin: 24px auto;
+  padding: 0 16px 40px;
+}
+
+/* ─── Cards ─────────────────────────────────────────────────────────────────── */
+.card {
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1), 0 2px 8px rgba(0,0,0,0.06);
+  padding: 22px 24px;
+  margin-bottom: 18px;
+}
+
+.card h2 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 14px;
+  color: #1a1a1a;
+}
+
+.card h3 {
+  font-size: 0.97rem;
+  font-weight: 600;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+/* ─── Parameters grid ───────────────────────────────────────────────────────── */
+.params-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 14px;
+}
+
+.params-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 0.88rem;
+  color: #555;
+  font-weight: 500;
+}
+
+.params-grid input,
+.params-grid select {
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  padding: 6px 8px;
+  font-size: 0.95rem;
+  color: #222;
+  background: #fafafa;
+  transition: border-color 0.15s;
+}
+
+.params-grid input:focus,
+.params-grid select:focus {
+  border-color: #1a73e8;
+  outline: none;
+  background: #fff;
+}
+
+#config-section label {
+  font-size: 0.9rem;
+  color: #555;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+#config-section select {
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  padding: 6px 10px;
+  font-size: 0.95rem;
+  background: #fafafa;
+}
+
+/* ─── Buttons ────────────────────────────────────────────────────────────────── */
+/*
+ * Padding/margin/size NEVER change across :hover, :focus, :active, :disabled.
+ * Focus uses outline; active uses box-shadow.
+ */
+.btn-primary,
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 20px;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  /* Prevent any size/border change on state changes */
+  outline: none;
+  box-shadow: none;
+}
+
+.btn-primary {
+  background: #1a73e8;
+  color: #fff;
+}
+
+.btn-secondary {
+  background: #5f6368;
+  color: #fff;
+}
+
+/* Focus: outline only (no size change) */
+.btn-primary:focus-visible,
+.btn-secondary:focus-visible {
+  outline: 3px solid #fbb400;
+  outline-offset: 2px;
+}
+
+/* Active: box-shadow only (no size change) */
+.btn-primary:active,
+.btn-secondary:active {
+  box-shadow: 0 0 0 3px rgba(26,115,232,0.35);
+}
+
+/* Disabled: faded, no pointer */
+.btn-primary:disabled,
+.btn-secondary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Spinner placeholder space always reserved */
+.btn-spinner-wrap {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+/* ─── Spinner ────────────────────────────────────────────────────────────────── */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.75s linear infinite;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+/* Hidden but still occupies space */
+.spinner--hidden {
+  visibility: hidden;
+}
+
+/* Large variant for overlay */
+.spinner--large {
+  width: 44px;
+  height: 44px;
+  border-width: 4px;
+  border-color: rgba(26, 115, 232, 0.25);
+  border-top-color: #1a73e8;
+}
+
+/* ─── Plot container & overlay ───────────────────────────────────────────────── */
+#plot-container {
+  position: relative;
+  min-height: 60px;
+}
+
+.plot-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.82);
+  border-radius: 6px;
+  z-index: 10;
+  min-height: 80px;
+}
+
+/* ─── Toggle tabs ────────────────────────────────────────────────────────────── */
+.toggle-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.toggle-btn {
+  padding: 6px 16px;
+  border: 2px solid #1a73e8;
+  border-radius: 20px;
+  background: #fff;
+  color: #1a73e8;
+  font-size: 0.88rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.toggle-btn:hover {
+  background: #e8f0fe;
+}
+
+.toggle-btn.active {
+  background: #1a73e8;
+  color: #fff;
+}
+
+.toggle-btn.active:hover {
+  background: #1558b0;
+}
+
+/* ─── LaTeX output ───────────────────────────────────────────────────────────── */
+#latex-output {
+  overflow-x: auto;
+}
+
+.latex-row {
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.latex-row:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.latex-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+
+.placeholder {
+  color: #aaa;
+  font-style: italic;
+  font-size: 0.93rem;
+}
+
+/* ─── Utilities section ──────────────────────────────────────────────────────── */
+.utility-block {
+  padding-bottom: 20px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #eee;
+}
+
+.utility-block:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.utility-inputs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.utility-inputs label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.88rem;
+  color: #555;
+  font-weight: 500;
+}
+
+.utility-inputs input,
+.utility-inputs select {
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  padding: 5px 8px;
+  font-size: 0.9rem;
+  background: #fafafa;
+  max-width: 110px;
+}
+
+.utility-inputs input:focus,
+.utility-inputs select:focus {
+  border-color: #1a73e8;
+  outline: none;
+}
+
+/* Inline label+input for single-field utilities */
+.util-inline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-size: 0.88rem;
+  color: #555;
+  font-weight: 500;
+}
+
+.util-inline input {
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  padding: 5px 8px;
+  font-size: 0.9rem;
+  background: #fafafa;
+  max-width: 100px;
+}
+
+#values-output,
+#find-time-output {
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  font-family: 'SFMono-Regular', 'Consolas', monospace;
+  font-size: 0.88rem;
+  color: #333;
+  white-space: pre-wrap;
+  min-height: 0;
+}
+
+.result-found {
+  color: #188038;
+  font-weight: 600;
+}
+
+.result-not-found {
+  color: #c5221f;
+  font-weight: 600;
+}

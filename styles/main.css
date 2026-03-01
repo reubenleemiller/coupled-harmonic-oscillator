@@ -269,6 +269,26 @@ header p.subtitle {
 
 .plot-select:focus { border-color: var(--clr-accent); }
 
+/* Small tool buttons inside the plot-tabs row */
+.plot-tool-btn {
+  padding: 0.35rem 0.85rem;
+  font-size: 0.82rem;
+}
+
+.plot-tool-btn.playing {
+  background: var(--clr-accent2);
+  color: #fff;
+}
+
+/* Animated spring diagram shown below the plot controls */
+.anim-diagram-wrap {
+  background: var(--clr-surface);
+  border: 1px solid var(--clr-border);
+  border-radius: var(--radius);
+  padding: 0.5rem 0.75rem 0.25rem;
+  margin-bottom: 0.75rem;
+}
+
 .plot-container {
   position: relative;
   background: var(--clr-surface);

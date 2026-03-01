@@ -13,6 +13,12 @@
 
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+  <!-- Chart.js plugins: zoom (requires hammerjs) and annotation -->
+  <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+  <!-- Font Awesome (free) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 </head>
 <body>
 <div class="page-wrapper">
@@ -31,21 +37,21 @@
       <!-- spring k1 -->
       <polyline points="10,35 30,35 35,20 45,50 55,20 65,50 75,20 85,50 90,35 110,35"
                 fill="none" stroke="#8892aa" stroke-width="2"/>
-      <text x="48" y="68" font-size="12" fill="#8892aa" text-anchor="middle">k₁</text>
+      <text x="60" y="68" font-size="12" fill="#8892aa" text-anchor="middle">k₁</text>
       <!-- mass 1 -->
       <rect x="110" y="20" width="40" height="30" fill="#4f8ef7" rx="4"/>
       <text x="130" y="40" font-size="14" fill="white" text-anchor="middle" font-weight="bold">m₁</text>
       <!-- spring k2 -->
       <polyline points="150,35 170,35 175,20 185,50 195,20 205,50 215,20 225,50 230,35 250,35"
                 fill="none" stroke="#8892aa" stroke-width="2"/>
-      <text x="210" y="68" font-size="12" fill="#8892aa" text-anchor="middle">k₂</text>
+      <text x="200" y="68" font-size="12" fill="#8892aa" text-anchor="middle">k₂</text>
       <!-- mass 2 -->
       <rect x="250" y="20" width="40" height="30" fill="#f76f4f" rx="4"/>
       <text x="270" y="40" font-size="14" fill="white" text-anchor="middle" font-weight="bold">m₂</text>
       <!-- spring k3 -->
       <polyline points="290,35 310,35 315,20 325,50 335,20 345,50 355,20 365,50 370,35 390,35"
                 fill="none" stroke="#8892aa" stroke-width="2"/>
-      <text x="350" y="68" font-size="12" fill="#8892aa" text-anchor="middle">k₃</text>
+      <text x="340" y="68" font-size="12" fill="#8892aa" text-anchor="middle">k₃</text>
       <!-- wall right -->
       <rect x="390" y="10" width="10" height="50" fill="#4f8ef7" rx="2"/>
     </svg>
@@ -55,14 +61,14 @@
       <!-- spring k1 -->
       <polyline points="10,35 30,35 35,20 45,50 55,20 65,50 75,20 85,50 90,35 110,35"
                 fill="none" stroke="#8892aa" stroke-width="2"/>
-      <text x="48" y="68" font-size="12" fill="#8892aa" text-anchor="middle">k₁</text>
+      <text x="60" y="68" font-size="12" fill="#8892aa" text-anchor="middle">k₁</text>
       <!-- mass 1 -->
       <rect x="110" y="20" width="40" height="30" fill="#4f8ef7" rx="4"/>
       <text x="130" y="40" font-size="14" fill="white" text-anchor="middle" font-weight="bold">m₁</text>
       <!-- spring k2 -->
       <polyline points="150,35 170,35 175,20 185,50 195,20 205,50 215,20 225,50 230,35 250,35"
                 fill="none" stroke="#8892aa" stroke-width="2"/>
-      <text x="210" y="68" font-size="12" fill="#8892aa" text-anchor="middle">k₂</text>
+      <text x="200" y="68" font-size="12" fill="#8892aa" text-anchor="middle">k₂</text>
       <!-- mass 2 (free end) -->
       <rect x="250" y="20" width="40" height="30" fill="#f76f4f" rx="4"/>
       <text x="270" y="40" font-size="14" fill="white" text-anchor="middle" font-weight="bold">m₂</text>
@@ -186,6 +192,53 @@
             <option value="acc">Acceleration</option>
             <option value="all">All</option>
           </select>
+          <button id="btn-play" class="btn btn-secondary plot-tool-btn" title="Play animation"><i class="fa-solid fa-play"></i> Play</button>
+          <button id="btn-reset-zoom" class="btn btn-secondary plot-tool-btn" title="Reset zoom"><i class="fa-solid fa-arrows-rotate"></i> Reset Zoom</button>
+        </div>
+        <!-- Animated spring diagram (duplicate of the header diagram; animated during Play) -->
+        <div id="anim-diagram" class="anim-diagram-wrap">
+          <svg id="svg-anim-three-spring" class="diagram-svg" viewBox="0 0 410 70" xmlns="http://www.w3.org/2000/svg">
+            <!-- wall left -->
+            <rect x="0" y="10" width="10" height="50" fill="#4f8ef7" rx="2"/>
+            <!-- spring k1 -->
+            <polyline data-role="k1-spring" points="10,35 30,35 35,20 45,50 55,20 65,50 75,20 85,50 90,35 110,35"
+                      fill="none" stroke="#8892aa" stroke-width="2"/>
+            <text data-role="k1-label" x="60" y="68" font-size="12" fill="#8892aa" text-anchor="middle">k₁</text>
+            <!-- mass 1 -->
+            <rect data-role="m1-rect" x="110" y="20" width="40" height="30" fill="#4f8ef7" rx="4"/>
+            <text data-role="m1-text" x="130" y="40" font-size="14" fill="white" text-anchor="middle" font-weight="bold">m₁</text>
+            <!-- spring k2 -->
+            <polyline data-role="k2-spring" points="150,35 170,35 175,20 185,50 195,20 205,50 215,20 225,50 230,35 250,35"
+                      fill="none" stroke="#8892aa" stroke-width="2"/>
+            <text data-role="k2-label" x="200" y="68" font-size="12" fill="#8892aa" text-anchor="middle">k₂</text>
+            <!-- mass 2 -->
+            <rect data-role="m2-rect" x="250" y="20" width="40" height="30" fill="#f76f4f" rx="4"/>
+            <text data-role="m2-text" x="270" y="40" font-size="14" fill="white" text-anchor="middle" font-weight="bold">m₂</text>
+            <!-- spring k3 -->
+            <polyline data-role="k3-spring" points="290,35 310,35 315,20 325,50 335,20 345,50 355,20 365,50 370,35 390,35"
+                      fill="none" stroke="#8892aa" stroke-width="2"/>
+            <text data-role="k3-label" x="340" y="68" font-size="12" fill="#8892aa" text-anchor="middle">k₃</text>
+            <!-- wall right -->
+            <rect x="390" y="10" width="10" height="50" fill="#4f8ef7" rx="2"/>
+          </svg>
+          <svg id="svg-anim-two-spring" class="diagram-svg" viewBox="0 0 310 70" xmlns="http://www.w3.org/2000/svg" style="display:none">
+            <!-- wall left -->
+            <rect x="0" y="10" width="10" height="50" fill="#4f8ef7" rx="2"/>
+            <!-- spring k1 -->
+            <polyline data-role="k1-spring" points="10,35 30,35 35,20 45,50 55,20 65,50 75,20 85,50 90,35 110,35"
+                      fill="none" stroke="#8892aa" stroke-width="2"/>
+            <text data-role="k1-label" x="60" y="68" font-size="12" fill="#8892aa" text-anchor="middle">k₁</text>
+            <!-- mass 1 -->
+            <rect data-role="m1-rect" x="110" y="20" width="40" height="30" fill="#4f8ef7" rx="4"/>
+            <text data-role="m1-text" x="130" y="40" font-size="14" fill="white" text-anchor="middle" font-weight="bold">m₁</text>
+            <!-- spring k2 -->
+            <polyline data-role="k2-spring" points="150,35 170,35 175,20 185,50 195,20 205,50 215,20 225,50 230,35 250,35"
+                      fill="none" stroke="#8892aa" stroke-width="2"/>
+            <text data-role="k2-label" x="200" y="68" font-size="12" fill="#8892aa" text-anchor="middle">k₂</text>
+            <!-- mass 2 (free end) -->
+            <rect data-role="m2-rect" x="250" y="20" width="40" height="30" fill="#f76f4f" rx="4"/>
+            <text data-role="m2-text" x="270" y="40" font-size="14" fill="white" text-anchor="middle" font-weight="bold">m₂</text>
+          </svg>
         </div>
         <div class="plot-container" id="plot-container">
           <!-- Plot spinner (unique, overlaid) -->
@@ -520,6 +573,214 @@ function generateLatex(osc) {
 const charts = {};
 const CHART_IDS = ['pos','vel','acc','all'];
 
+// ── Marker & animation global state ─────────────────────────────────────
+let markerTime  = null;   // time set by "Find First Time" to mark on charts
+let currentTArr = [];     // full time array for current solve
+let svgScale    = 20;     // SVG pixels per physics displacement unit
+const ANIM_DURATION_MS = 6000; // milliseconds for a full play-through
+const animState = { active: false, rafId: null, startTs: null, duration: ANIM_DURATION_MS };
+
+// ── Spring polyline generator ────────────────────────────────────────────
+/**
+ * Return a points string for a zigzag spring between (x1,35) and (x2,35).
+ * Uses a lead segment at each end, then 6 equal zigzag peaks/valleys.
+ * SVG y-center is 35; zigzag amplitude is ±15 px.
+ */
+function springPolyline(x1, x2) {
+  var totalWidth = x2 - x1;
+  if (totalWidth < 2) return x1 + ',35 ' + x2 + ',35';
+  var lead      = Math.min(20, totalWidth * 0.18);
+  var amplitude = 15; // px above/below the centre line
+  var centerY   = 35; // SVG y-coordinate of the spring centre line
+  var zigzagCount = 6;
+  var zigzagStart  = x1 + lead;
+  var zigzagEnd    = x2 - lead;
+  var zigzagLength = zigzagEnd - zigzagStart;
+  var step = zigzagLength / (zigzagCount + 1);
+  var pts  = [x1 + ',' + centerY, zigzagStart.toFixed(1) + ',' + centerY];
+  for (var i = 1; i <= zigzagCount; i++) {
+    pts.push((zigzagStart + i * step).toFixed(1) + ',' +
+             (centerY + (i % 2 === 1 ? -amplitude : amplitude)));
+  }
+  pts.push(zigzagEnd.toFixed(1) + ',' + centerY, x2 + ',' + centerY);
+  return pts.join(' ');
+}
+
+// ── SVG diagram animation ────────────────────────────────────────────────
+/**
+ * Update the spring diagram SVG to show physics positions at time t.
+ */
+function updateSvgAnimation(t) {
+  if (!currentOsc) return;
+  var isThree = document.getElementById('p-config').value === 'three-spring';
+  var svg = document.getElementById(isThree ? 'svg-anim-three-spring' : 'svg-anim-two-spring');
+  if (!svg) return;
+
+  // SVG layout constants (match the static HTML values)
+  var massWidth  = 40;  // width of each mass rectangle in SVG units
+  var wallLeft   = 10;  // right edge of the left wall
+  var wallRight  = 390; // left edge of the right wall (three-spring only)
+  var m1Equilibrium = 110; // left edge of mass 1 at rest
+  var m2Equilibrium = 250; // left edge of mass 2 at rest
+
+  var d1 = currentOsc.position(1, t) * svgScale;
+  var d2 = currentOsc.position(2, t) * svgScale;
+  var m1x = m1Equilibrium + d1;
+  var m2x = m2Equilibrium + d2;
+  // Clamp to prevent overlap or out-of-bounds
+  m1x = Math.max(wallLeft + 4, m1x);
+  m2x = Math.max(m1x + massWidth + 4, m2x);
+  if (isThree) { m2x = Math.min(wallRight - massWidth - 4, m2x); }
+  m1x = Math.min(m2x - massWidth - 4, m1x);
+
+  var m1Center = m1x + massWidth / 2;
+  var m2Center = m2x + massWidth / 2;
+
+  function updateSvgElement(role, attr, val) {
+    var el = svg.querySelector('[data-role="' + role + '"]');
+    if (el) el.setAttribute(attr, val);
+  }
+
+  updateSvgElement('m1-rect',  'x', m1x.toFixed(1));
+  updateSvgElement('m1-text',  'x', m1Center.toFixed(1));
+  updateSvgElement('m2-rect',  'x', m2x.toFixed(1));
+  updateSvgElement('m2-text',  'x', m2Center.toFixed(1));
+  updateSvgElement('k1-spring', 'points', springPolyline(wallLeft, m1x));
+  updateSvgElement('k1-label',  'x', ((wallLeft + m1x) / 2).toFixed(1));
+  updateSvgElement('k2-spring', 'points', springPolyline(m1x + massWidth, m2x));
+  updateSvgElement('k2-label',  'x', ((m1x + massWidth + m2x) / 2).toFixed(1));
+  if (isThree) {
+    updateSvgElement('k3-spring', 'points', springPolyline(m2x + massWidth, wallRight));
+    updateSvgElement('k3-label',  'x', ((m2x + massWidth + wallRight) / 2).toFixed(1));
+  }
+}
+
+function computeSvgScale() {
+  if (!currentOsc || !currentTArr.length) return 20;
+  var minAmplitude = 1e-9; // avoid division by zero for a stationary system
+  var maxAmp = minAmplitude;
+  for (var i = 0; i < currentTArr.length; i++) {
+    var a = Math.abs(currentOsc.position(1, currentTArr[i]));
+    var b = Math.abs(currentOsc.position(2, currentTArr[i]));
+    if (a > maxAmp) maxAmp = a;
+    if (b > maxAmp) maxAmp = b;
+  }
+  // Map peak displacement to 30 SVG px; cap at 40 px/unit to avoid excessive stretching
+  return Math.min(40, 30 / maxAmp);
+}
+
+// ── Marker annotation helpers ────────────────────────────────────────────
+function getAnnotations(tArr) {
+  if (markerTime === null || !tArr || !tArr.length) return {};
+  // Find the index in tArr whose time is closest to markerTime
+  var closestIndex = 0, minDistance = Infinity;
+  for (var i = 0; i < tArr.length; i++) {
+    var distance = Math.abs(tArr[i] - markerTime);
+    if (distance < minDistance) { minDistance = distance; closestIndex = i; }
+  }
+  return {
+    targetMarker: {
+      type: 'line',
+      xMin: closestIndex, xMax: closestIndex,
+      borderColor: 'rgba(255,215,0,0.85)',
+      borderWidth: 2,
+      borderDash: [5, 4],
+      label: {
+        display: true,
+        content: 't = ' + markerTime.toFixed(4),
+        position: 'start',
+        backgroundColor: 'rgba(255,215,0,0.12)',
+        color: '#ffd700',
+        font: { size: 10 }
+      }
+    }
+  };
+}
+
+function applyMarkerToAllCharts() {
+  CHART_IDS.forEach(function(id) {
+    if (charts[id]) {
+      charts[id].options.plugins.annotation = { annotations: getAnnotations(currentTArr) };
+      charts[id].update('none');
+    }
+  });
+}
+
+// ── Play / Pause animation ───────────────────────────────────────────────
+function stopAnimation() {
+  animState.active = false;
+  if (animState.rafId) { cancelAnimationFrame(animState.rafId); animState.rafId = null; }
+  var btn = document.getElementById('btn-play');
+  if (btn) {
+    var icon = document.createElement('i');
+    icon.className = 'fa-solid fa-play';
+    btn.textContent = '';
+    btn.appendChild(icon);
+    btn.appendChild(document.createTextNode(' Play'));
+    btn.classList.remove('playing');
+  }
+  // Restore full data + annotations on all charts
+  if (currentOsc && currentTArr.length) {
+    var activeId = document.getElementById('plot-select').value;
+    CHART_IDS.forEach(function(id) {
+      if (!charts[id]) return;
+      charts[id].data = {
+        labels: currentTArr.map(function(t){ return t.toFixed(2); }),
+        datasets: buildDatasets(currentOsc, currentTArr, id)
+      };
+      charts[id].options.plugins.annotation = { annotations: getAnnotations(currentTArr) };
+      charts[id].update('none');
+      document.getElementById('chart-' + id).style.display = (id === activeId) ? 'block' : 'none';
+    });
+  }
+  // Reset SVG to t=0 (initial conditions)
+  if (currentOsc) updateSvgAnimation(0);
+}
+
+function startAnimation() {
+  if (!currentOsc || !currentTArr.length) return;
+  svgScale = computeSvgScale();
+  animState.active = true;
+  animState.startTs = null;
+  var btn = document.getElementById('btn-play');
+  if (btn) {
+    var icon = document.createElement('i');
+    icon.className = 'fa-solid fa-pause';
+    btn.textContent = '';
+    btn.appendChild(icon);
+    btn.appendChild(document.createTextNode(' Pause'));
+    btn.classList.add('playing');
+  }
+
+  function tick(ts) {
+    if (!animState.active) return;
+    if (!animState.startTs) animState.startTs = ts;
+    var progress = Math.min((ts - animState.startTs) / animState.duration, 1);
+    var nPoints  = Math.max(1, Math.round(progress * currentTArr.length));
+    var partialT = currentTArr.slice(0, nPoints);
+    var curTime  = currentTArr[nPoints - 1];
+
+    // Update the currently visible chart with growing data
+    var activeId = document.getElementById('plot-select').value;
+    if (charts[activeId]) {
+      charts[activeId].data = {
+        labels:   partialT.map(function(t){ return t.toFixed(2); }),
+        datasets: buildDatasets(currentOsc, partialT, activeId)
+      };
+      charts[activeId].update('none');
+    }
+    // Animate the SVG spring diagram
+    updateSvgAnimation(curTime);
+
+    if (progress < 1) {
+      animState.rafId = requestAnimationFrame(tick);
+    } else {
+      stopAnimation();
+    }
+  }
+  animState.rafId = requestAnimationFrame(tick);
+}
+
 function buildDatasets(osc, tArr, kind) {
   const colors = ['#4f8ef7', '#f76f4f'];
   const masses = [1, 2];
@@ -564,8 +825,10 @@ function buildOrUpdateChart(id, osc, tArr) {
   const canvas = document.getElementById(`chart-${id}`);
   const datasets = buildDatasets(osc, tArr, id);
   const data = { labels: tArr.map(t => t.toFixed(2)), datasets };
+  const annot = getAnnotations(tArr);
   if (charts[id]) {
     charts[id].data = data;
+    charts[id].options.plugins.annotation = { annotations: annot };
     charts[id].update('none');
     return;
   }
@@ -579,6 +842,16 @@ function buildOrUpdateChart(id, osc, tArr) {
       plugins: {
         legend: { labels: { color: '#e2e8f0', font: { size: 12 } } },
         tooltip: { mode: 'index' },
+        annotation: { annotations: annot },
+        zoom: {
+          zoom: {
+            drag: { enabled: true, backgroundColor: 'rgba(100,130,220,0.15)', borderColor: 'rgba(100,130,220,0.6)', borderWidth: 1 },
+            wheel: { enabled: true },
+            pinch: { enabled: true },
+            mode: 'xy'
+          },
+          pan: { enabled: false }
+        }
       },
       scales: {
         x: {
@@ -640,10 +913,14 @@ function onConfigChange() {
   const k3Field   = document.getElementById('k3-field');
   const svgThree  = document.getElementById('svg-three-spring');
   const svgTwo    = document.getElementById('svg-two-spring');
+  const animThree = document.getElementById('svg-anim-three-spring');
+  const animTwo   = document.getElementById('svg-anim-two-spring');
   const modelLabel = document.getElementById('model-label');
   if (k3Field)    k3Field.style.display    = cfg === 'three-spring' ? '' : 'none';
   if (svgThree)   svgThree.style.display   = cfg === 'three-spring' ? '' : 'none';
   if (svgTwo)     svgTwo.style.display     = cfg === 'two-spring'   ? '' : 'none';
+  if (animThree)  animThree.style.display  = cfg === 'three-spring' ? '' : 'none';
+  if (animTwo)    animTwo.style.display    = cfg === 'two-spring'   ? '' : 'none';
   if (modelLabel) modelLabel.textContent   = cfg === 'three-spring'
                     ? 'undamped, 3-spring model' : 'undamped, 2-spring model';
 }
@@ -666,6 +943,10 @@ function readParams() {
 }
 
 function updateAll() {
+  // Stop any running animation and clear the time marker
+  if (animState.active) stopAnimation();
+  markerTime = null;
+
   const solutionOverlay = document.getElementById('solution-spinner');
   const plotOverlay     = document.getElementById('plot-spinner');
   // Show both content overlays while computing
@@ -700,11 +981,16 @@ function updateAll() {
 
           // Render charts
           CHART_IDS.forEach(id => buildOrUpdateChart(id, currentOsc, tArr));
+          // Store tArr globally for animation and marker use
+          currentTArr = tArr;
           // Enforce: only the selected chart is visible (Chart.js sets display:block on all)
           const activeId = document.getElementById('plot-select').value;
           CHART_IDS.forEach(id => {
             document.getElementById(`chart-${id}`).style.display = (id === activeId) ? 'block' : 'none';
           });
+          // Show initial SVG position (t=0 = initial conditions)
+          svgScale = computeSvgScale();
+          updateSvgAnimation(0);
         } catch (e) {
           console.error('Render error:', e);
         }
@@ -764,8 +1050,13 @@ document.getElementById('btn-findtime').addEventListener('click', () => {
     const result = currentOsc.firstTimeTo(mass, qty, target, { tMin, tMax, tolerance: tol, dt: 0.005 });
     const qLabel = qty==='x' ? 'position' : qty==='v' ? 'velocity' : 'acceleration';
     if (result === null) {
+      markerTime = null;
+      applyMarkerToAllCharts();
       return `<span class="res-none">Not found in [${tMin}, ${tMax}].</span>`;
     }
+    // Mark the found time on the charts
+    markerTime = result;
+    applyMarkerToAllCharts();
     return `<span class="res-label">First time mass ${mass} ${qLabel} = ${target}:</span><br>` +
            `<span class="res-value">t ≈ ${result.toFixed(8)}</span>`;
   });
@@ -795,6 +1086,18 @@ document.getElementById('btn-valattime').addEventListener('click', () => {
 
 // ── Update button ───────────────────────────────────────────────────────
 document.getElementById('btn-update').addEventListener('click', updateAll);
+
+// ── Play / Pause button ─────────────────────────────────────────────────
+document.getElementById('btn-play').addEventListener('click', () => {
+  if (!currentOsc) return;
+  if (animState.active) stopAnimation();
+  else startAnimation();
+});
+
+// ── Reset Zoom button ───────────────────────────────────────────────────
+document.getElementById('btn-reset-zoom').addEventListener('click', () => {
+  CHART_IDS.forEach(id => { if (charts[id]) charts[id].resetZoom(); });
+});
 
 // ── Initial render (after KaTeX + Chart.js load) ────────────────────────
 window.addEventListener('load', () => {

@@ -17,6 +17,8 @@
   <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+  <!-- Font Awesome (free) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 </head>
 <body>
 <div class="page-wrapper">
@@ -190,8 +192,8 @@
             <option value="acc">Acceleration</option>
             <option value="all">All</option>
           </select>
-          <button id="btn-play" class="btn btn-secondary plot-tool-btn" title="Play animation">▶ Play</button>
-          <button id="btn-reset-zoom" class="btn btn-secondary plot-tool-btn" title="Reset zoom">⟳ Reset Zoom</button>
+          <button id="btn-play" class="btn btn-secondary plot-tool-btn" title="Play animation"><i class="fa-solid fa-play"></i> Play</button>
+          <button id="btn-reset-zoom" class="btn btn-secondary plot-tool-btn" title="Reset zoom"><i class="fa-solid fa-arrows-rotate"></i> Reset Zoom</button>
         </div>
         <!-- Animated spring diagram (duplicate of the header diagram; animated during Play) -->
         <div id="anim-diagram" class="anim-diagram-wrap">
@@ -709,7 +711,14 @@ function stopAnimation() {
   animState.active = false;
   if (animState.rafId) { cancelAnimationFrame(animState.rafId); animState.rafId = null; }
   var btn = document.getElementById('btn-play');
-  if (btn) { btn.textContent = '▶ Play'; btn.classList.remove('playing'); }
+  if (btn) {
+    var icon = document.createElement('i');
+    icon.className = 'fa-solid fa-play';
+    btn.textContent = '';
+    btn.appendChild(icon);
+    btn.appendChild(document.createTextNode(' Play'));
+    btn.classList.remove('playing');
+  }
   // Restore full data + annotations on all charts
   if (currentOsc && currentTArr.length) {
     var activeId = document.getElementById('plot-select').value;
@@ -734,7 +743,14 @@ function startAnimation() {
   animState.active = true;
   animState.startTs = null;
   var btn = document.getElementById('btn-play');
-  if (btn) { btn.textContent = '⏸ Pause'; btn.classList.add('playing'); }
+  if (btn) {
+    var icon = document.createElement('i');
+    icon.className = 'fa-solid fa-pause';
+    btn.textContent = '';
+    btn.appendChild(icon);
+    btn.appendChild(document.createTextNode(' Pause'));
+    btn.classList.add('playing');
+  }
 
   function tick(ts) {
     if (!animState.active) return;
@@ -828,8 +844,12 @@ function buildOrUpdateChart(id, osc, tArr) {
         tooltip: { mode: 'index' },
         annotation: { annotations: annot },
         zoom: {
-          zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'x' },
-          pan:  { enabled: true, mode: 'x' }
+          zoom: {
+            drag: { enabled: true, backgroundColor: 'rgba(100,130,220,0.15)', borderColor: 'rgba(100,130,220,0.6)', borderWidth: 1 },
+            wheel: { enabled: true },
+            mode: 'xy'
+          },
+          pan: { enabled: false }
         }
       },
       scales: {

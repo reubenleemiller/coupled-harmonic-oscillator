@@ -269,6 +269,17 @@ header p.subtitle {
 
 .plot-select:focus { border-color: var(--clr-accent); }
 
+/* Small tool buttons inside the plot-tabs row */
+.plot-tool-btn {
+  padding: 0.35rem 0.85rem;
+  font-size: 0.82rem;
+}
+
+.plot-tool-btn.playing {
+  background: var(--clr-accent2);
+  color: #fff;
+}
+
 .plot-container {
   position: relative;
   background: var(--clr-surface);

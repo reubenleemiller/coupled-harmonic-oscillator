@@ -93,6 +93,40 @@
             </select>
           </div>
 
+          <div class="section-label">Forcing</div>
+          <div class="param-group" style="grid-column:1/-1;">
+            <label for="p-force-type">Force type</label>
+            <select id="p-force-type" class="plot-select" style="width:100%;">
+              <option value="none">None</option>
+              <option value="cos">A cos(ωt − φ)</option>
+              <option value="sin">A sin(ωt − φ)</option>
+            </select>
+          </div>
+          <div id="force-params" style="display:none; grid-column:1/-1;">
+            <div class="param-grid">
+              <div class="param-group" style="grid-column:1/-1;">
+                <label for="p-force-target">Apply to</label>
+                <select id="p-force-target" class="plot-select" style="width:100%;">
+                  <option value="mass1">Mass 1</option>
+                  <option value="mass2">Mass 2</option>
+                  <option value="both">Both</option>
+                </select>
+              </div>
+              <div class="param-group">
+                <label for="p-force-A">Amplitude A</label>
+                <input type="number" id="p-force-A" value="1" step="0.1" />
+              </div>
+              <div class="param-group">
+                <label for="p-force-omega">Drive ω</label>
+                <input type="number" id="p-force-omega" value="1" min="0" step="0.1" />
+              </div>
+              <div class="param-group" style="grid-column:1/-1;">
+                <label for="p-force-phi">Phase φ</label>
+                <input type="number" id="p-force-phi" value="0" step="0.1" />
+              </div>
+            </div>
+          </div>
+
           <div class="section-label">Masses</div>
           <div class="param-group">
             <label for="p-m1">m₁ (mass 1)</label>
@@ -160,6 +194,11 @@
       <!-- Analytic solution -->
       <div class="card" style="margin-bottom:1rem; position:relative;">
         <h2>Analytic Solution</h2>
+        <div id="force-warning" class="force-warning" style="display:none;">
+          ⚠️ <strong>Forcing is enabled.</strong> The formulas below describe the
+          <em>unforced</em> system. Plots and animation show the numerical (RK4)
+          solution for the forced system.
+        </div>
         <div class="plot-spinner-overlay plot-spinner-overlay--idle" id="solution-spinner">
           <div class="big-spinner"></div>
           <p class="overlay-loading-msg">Computing…</p>
@@ -470,6 +509,119 @@ class CoupledOscillator {
       }
       prevT=curT; prevF=curF;
       if (curT>=tMax) break;
+    }
+    return null;
+  }
+}
+
+// ── ForcedOscillatorRK4 ─────────────────────────────────────────────────
+/**
+ * Numerical (RK4) solver for a driven coupled harmonic oscillator.
+ * Equations of motion:
+ *   m₁ ẍ₁ = -(k₁+k₂) x₁ + k₂ x₂ + F₁(t)
+ *   m₂ ẍ₂ =  k₂ x₁ − (k₂+k₃) x₂ + F₂(t)
+ * Provides the same interface as CoupledOscillator.
+ */
+class ForcedOscillatorRK4 {
+  constructor(params) {
+    const {
+      m1, m2, k1, k2, k3,
+      x10 = 0, x20 = 0, v10 = 0, v20 = 0,
+      tMax = 30, steps = 600,
+      forceType = 'cos',
+      forceTarget = 'mass1',
+      forceA = 1, forceOmega = 1, forcePhi = 0,
+    } = params;
+    this.m1 = m1; this.m2 = m2;
+    this.k1 = k1; this.k2 = k2; this.k3 = k3;
+
+    const trigFn = forceType === 'sin'
+      ? t => forceA * Math.sin(forceOmega * t - forcePhi)
+      : t => forceA * Math.cos(forceOmega * t - forcePhi);
+    this._F1 = (forceTarget === 'mass1' || forceTarget === 'both') ? trigFn : () => 0;
+    this._F2 = (forceTarget === 'mass2' || forceTarget === 'both') ? trigFn : () => 0;
+
+    const h = tMax / steps;
+    const x1s = new Float64Array(steps + 1);
+    const v1s = new Float64Array(steps + 1);
+    const x2s = new Float64Array(steps + 1);
+    const v2s = new Float64Array(steps + 1);
+    x1s[0] = x10; v1s[0] = v10; x2s[0] = x20; v2s[0] = v20;
+
+    const deriv = (t, x1, v1, x2, v2) => [
+      v1,
+      (-(k1 + k2) * x1 + k2 * x2 + this._F1(t)) / m1,
+      v2,
+      (k2 * x1 - (k2 + k3) * x2 + this._F2(t)) / m2,
+    ];
+
+    let cx1 = x10, cv1 = v10, cx2 = x20, cv2 = v20;
+    for (let i = 0; i < steps; i++) {
+      const t = i * h;
+      const [dv1k1, da1k1, dv2k1, da2k1] = deriv(t,       cx1,                cv1,                cx2,                cv2);
+      const [dv1k2, da1k2, dv2k2, da2k2] = deriv(t + h/2, cx1 + h/2*dv1k1,   cv1 + h/2*da1k1,   cx2 + h/2*dv2k1,   cv2 + h/2*da2k1);
+      const [dv1k3, da1k3, dv2k3, da2k3] = deriv(t + h/2, cx1 + h/2*dv1k2,   cv1 + h/2*da1k2,   cx2 + h/2*dv2k2,   cv2 + h/2*da2k2);
+      const [dv1k4, da1k4, dv2k4, da2k4] = deriv(t + h,   cx1 + h*dv1k3,     cv1 + h*da1k3,     cx2 + h*dv2k3,     cv2 + h*da2k3);
+      cx1 += h/6*(dv1k1 + 2*dv1k2 + 2*dv1k3 + dv1k4);
+      cv1 += h/6*(da1k1 + 2*da1k2 + 2*da1k3 + da1k4);
+      cx2 += h/6*(dv2k1 + 2*dv2k2 + 2*dv2k3 + dv2k4);
+      cv2 += h/6*(da2k1 + 2*da2k2 + 2*da2k3 + da2k4);
+      x1s[i+1] = cx1; v1s[i+1] = cv1;
+      x2s[i+1] = cx2; v2s[i+1] = cv2;
+    }
+    this._x1s = x1s; this._v1s = v1s;
+    this._x2s = x2s; this._v2s = v2s;
+    this._h = h; this._steps = steps; this._tMax = tMax;
+    // Keep omega1/omega2 at 0; callers that need the analytic values use the
+    // separate unforcedOsc reference stored on the application state.
+    this.omega1 = 0; this.omega2 = 0;
+  }
+
+  _interp(arr, t) {
+    if (t <= 0) return arr[0];
+    if (t >= this._tMax) return arr[this._steps];
+    const idx = Math.floor(t / this._h);
+    const frac = (t - idx * this._h) / this._h;
+    return arr[idx] * (1 - frac) + arr[idx + 1] * frac;
+  }
+
+  position(mass, t)     { return this._interp(mass === 1 ? this._x1s : this._x2s, t); }
+  velocity(mass, t)     { return this._interp(mass === 1 ? this._v1s : this._v2s, t); }
+  acceleration(mass, t) {
+    const x1 = this.position(1, t), x2 = this.position(2, t);
+    const { k1, k2, k3, m1, m2 } = this;
+    return mass === 1
+      ? (-(k1+k2)*x1 + k2*x2 + this._F1(t)) / m1
+      : (k2*x1 - (k2+k3)*x2 + this._F2(t)) / m2;
+  }
+  valueAtTime(t) {
+    return {
+      x1: this.position(1,t),     v1: this.velocity(1,t),     a1: this.acceleration(1,t),
+      x2: this.position(2,t),     v2: this.velocity(2,t),     a2: this.acceleration(2,t),
+    };
+  }
+  firstTimeTo(mass, quantity, target, opts = {}) {
+    const { tMin=0, tMax=this._tMax, dt=0.01, tolerance=1e-9 } = opts;
+    const searchMax = Math.min(tMax, this._tMax);
+    const fn = quantity==='x' ? t=>this.position(mass,t)
+             : quantity==='v' ? t=>this.velocity(mass,t)
+             : t=>this.acceleration(mass,t);
+    let prevT=tMin, prevF=fn(tMin)-target;
+    if (Math.abs(prevF)<tolerance) return tMin;
+    for (let t=tMin+dt; t<=searchMax+dt*0.5; t+=dt) {
+      const curT=Math.min(t,searchMax), curF=fn(curT)-target;
+      if (Math.abs(curF)<tolerance) return curT;
+      if (prevF*curF<0) {
+        let lo=prevT, hi=curT;
+        for (let i=0;i<60;i++) {
+          const mid=(lo+hi)/2, mf=fn(mid)-target;
+          if (Math.abs(mf)<tolerance) return mid;
+          if (prevF*mf<=0) hi=mid; else { lo=mid; prevF=mf; }
+        }
+        return (lo+hi)/2;
+      }
+      prevT=curT; prevF=curF;
+      if (curT>=searchMax) break;
     }
     return null;
   }
@@ -942,6 +1094,15 @@ function readParams() {
   };
 }
 
+function readForceParams() {
+  const forceType   = document.getElementById('p-force-type').value;
+  const forceTarget = document.getElementById('p-force-target').value;
+  const forceA      = parseFloat(document.getElementById('p-force-A').value)     || 0;
+  const forceOmega  = parseFloat(document.getElementById('p-force-omega').value) || 0;
+  const forcePhi    = parseFloat(document.getElementById('p-force-phi').value)   || 0;
+  return { forceType, forceTarget, forceA, forceOmega, forcePhi };
+}
+
 function updateAll() {
   // Stop any running animation and clear the time marker
   if (animState.active) stopAnimation();
@@ -955,21 +1116,35 @@ function updateAll() {
 
   return withSpinner('spinner-update', 'btn-update', SPINNER_MS, () => {
     const params = readParams();
-    currentOsc = new CoupledOscillator(params);
-    const lt   = generateLatex(currentOsc);
+    const { forceType, forceTarget, forceA, forceOmega, forcePhi } = readForceParams();
+    const forcingEnabled = forceType !== 'none';
 
+    // Always build the analytic (unforced) oscillator for the LaTeX display
+    const analyticOsc = new CoupledOscillator(params);
+    const lt          = generateLatex(analyticOsc);
+
+    // For plots/animation use RK4 when forcing is active, analytic otherwise
     const tmax  = parseFloat(document.getElementById('p-tmax').value)  || 30;
     const steps = parseInt(document.getElementById('p-steps').value, 10) || 600;
     const tArr  = Array.from({length: steps+1}, (_,i) => i * tmax / steps);
+
+    currentOsc = forcingEnabled
+      ? new ForcedOscillatorRK4({ ...params, tMax: tmax, steps,
+          forceType, forceTarget, forceA, forceOmega, forcePhi })
+      : analyticOsc;
+
+    // Show / hide the forced-system warning banner
+    const forceWarning = document.getElementById('force-warning');
+    if (forceWarning) forceWarning.style.display = forcingEnabled ? '' : 'none';
 
     const start = Date.now();
     return new Promise(resolve => {
       // Let the browser paint the spinners before heavy work
       requestAnimationFrame(() => requestAnimationFrame(() => {
         try {
-          // Render omega display with radical form
-          renderKatex('disp-w1', `\\omega_1 = ${omegaExactLatex(currentOsc.omega1, currentOsc._lamSum, currentOsc._discSq)}`);
-          renderKatex('disp-w2', `\\omega_2 = ${omegaExactLatex(currentOsc.omega2, currentOsc._lamSum, currentOsc._discSq)}`);
+          // Render omega display with radical form (always from analytic solution)
+          renderKatex('disp-w1', `\\omega_1 = ${omegaExactLatex(analyticOsc.omega1, analyticOsc._lamSum, analyticOsc._discSq)}`);
+          renderKatex('disp-w2', `\\omega_2 = ${omegaExactLatex(analyticOsc.omega2, analyticOsc._lamSum, analyticOsc._discSq)}`);
 
           // Render solution expressions
           renderKatex('sol-x1', lt.x1);
@@ -1018,6 +1193,11 @@ document.getElementById('plot-select').addEventListener('change', function () {
 document.getElementById('p-config').addEventListener('change', () => {
   onConfigChange();
   updateAll();
+});
+
+// ── Force-type dropdown (show/hide force parameters) ────────────────────
+document.getElementById('p-force-type').addEventListener('change', function () {
+  document.getElementById('force-params').style.display = this.value !== 'none' ? '' : 'none';
 });
 
 // ── Spinner helper for utility buttons ──────────────────────────────────

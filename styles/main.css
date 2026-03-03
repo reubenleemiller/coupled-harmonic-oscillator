@@ -419,3 +419,15 @@ header p.subtitle {
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: var(--clr-bg); }
 ::-webkit-scrollbar-thumb { background: var(--clr-border); border-radius: 3px; }
+
+/* ── Force warning banner ──────────────────────────────────────────────── */
+.force-warning {
+  background: rgba(247, 111, 79, 0.12);
+  border: 1px solid rgba(247, 111, 79, 0.4);
+  border-radius: 5px;
+  color: #f7c44f;
+  font-size: 0.82rem;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.75rem;
+  line-height: 1.45;
+}

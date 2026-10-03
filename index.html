@@ -1,0 +1,1288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Coupled Harmonic Oscillator</title>
+  <link rel="stylesheet" href="styles/main.css" />
+
+  <!-- KaTeX -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" />
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+  <!-- Chart.js plugins: zoom (requires hammerjs) and annotation -->
+  <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+  <!-- Font Awesome (free) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+</head>
+<body>
+<div class="page-wrapper">
+
+  <!-- ── Header ─────────────────────────────────────────────────── -->
+  <header>
+    <h1>Coupled Harmonic Oscillator</h1>
+    <p class="subtitle">Analytic solution &amp; interactive visualization of a two-mass spring system</p>
+  </header>
+
+  <!-- ── Diagram ────────────────────────────────────────────────── -->
+  <div style="text-align:center; margin-bottom:1rem;">
+    <svg id="svg-three-spring" class="diagram-svg" viewBox="0 0 410 70" xmlns="http://www.w3.org/2000/svg">
+      <!-- wall left -->
+      <rect x="0" y="10" width="10" height="50" fill="#4f8ef7" rx="2"/>
+      <!-- spring k1 -->
+      <polyline points="10,35 30,35 35,20 45,50 55,20 65,50 75,20 85,50 90,35 110,35"
+                fill="none" stroke="#8892aa" stroke-width="2"/>
+      <text x="60" y="68" font-size="12" fill="#8892aa" text-anchor="middle">k₁</text>
+      <!-- mass 1 -->
+      <rect x="110" y="20" width="40" height="30" fill="#4f8ef7" rx="4"/>
+      <text x="130" y="40" font-size="14" fill="white" text-anchor="middle" font-weight="bold">m₁</text>
+      <!-- spring k2 -->
+      <polyline points="150,35 170,35 175,20 185,50 195,20 205,50 215,20 225,50 230,35 250,35"
+                fill="none" stroke="#8892aa" stroke-width="2"/>
+      <text x="200" y="68" font-size="12" fill="#8892aa" text-anchor="middle">k₂</text>
+      <!-- mass 2 -->
+      <rect x="250" y="20" width="40" height="30" fill="#f76f4f" rx="4"/>
+      <text x="270" y="40" font-size="14" fill="white" text-anchor="middle" font-weight="bold">m₂</text>
+      <!-- spring k3 -->
+      <polyline points="290,35 310,35 315,20 325,50 335,20 345,50 355,20 365,50 370,35 390,35"
+                fill="none" stroke="#8892aa" stroke-width="2"/>
+      <text x="340" y="68" font-size="12" fill="#8892aa" text-anchor="middle">k₃</text>
+      <!-- wall right -->
+      <rect x="390" y="10" width="10" height="50" fill="#4f8ef7" rx="2"/>
+    </svg>
+    <svg id="svg-two-spring" class="diagram-svg" viewBox="0 0 310 70" xmlns="http://www.w3.org/2000/svg" style="display:none">
+      <!-- wall left -->
+      <rect x="0" y="10" width="10" height="50" fill="#4f8ef7" rx="2"/>
+      <!-- spring k1 -->
+      <polyline points="10,35 30,35 35,20 45,50 55,20 65,50 75,20 85,50 90,35 110,35"
+                fill="none" stroke="#8892aa" stroke-width="2"/>
+      <text x="60" y="68" font-size="12" fill="#8892aa" text-anchor="middle">k₁</text>
+      <!-- mass 1 -->
+      <rect x="110" y="20" width="40" height="30" fill="#4f8ef7" rx="4"/>
+      <text x="130" y="40" font-size="14" fill="white" text-anchor="middle" font-weight="bold">m₁</text>
+      <!-- spring k2 -->
+      <polyline points="150,35 170,35 175,20 185,50 195,20 205,50 215,20 225,50 230,35 250,35"
+                fill="none" stroke="#8892aa" stroke-width="2"/>
+      <text x="200" y="68" font-size="12" fill="#8892aa" text-anchor="middle">k₂</text>
+      <!-- mass 2 (free end) -->
+      <rect x="250" y="20" width="40" height="30" fill="#f76f4f" rx="4"/>
+      <text x="270" y="40" font-size="14" fill="white" text-anchor="middle" font-weight="bold">m₂</text>
+    </svg>
+  </div>
+
+  <!-- ── Main grid ───────────────────────────────────────────────── -->
+  <div class="main-grid">
+
+    <!-- ── LEFT: Parameters ──────────────────────────────────────── -->
+    <aside>
+      <div class="card">
+        <h2>Parameters</h2>
+        <div class="param-grid">
+
+          <div class="section-label">Configuration</div>
+          <div class="param-group" style="grid-column:1/-1;">
+            <label for="p-config">Spring model</label>
+            <select id="p-config" class="plot-select" style="width:100%;">
+              <option value="three-spring">3-spring: wall – m₁ – m₂ – wall</option>
+              <option value="two-spring">2-spring: wall – m₁ – m₂ (free end)</option>
+            </select>
+          </div>
+
+          <div class="section-label">Forcing</div>
+          <div class="param-group" style="grid-column:1/-1;">
+            <label for="p-force-type">Force type</label>
+            <select id="p-force-type" class="plot-select" style="width:100%;">
+              <option value="none">None</option>
+              <option value="cos">A cos(ωt − φ)</option>
+              <option value="sin">A sin(ωt − φ)</option>
+            </select>
+          </div>
+          <div id="force-params" style="display:none; grid-column:1/-1;">
+            <div class="param-grid">
+              <div class="param-group" style="grid-column:1/-1;">
+                <label for="p-force-target">Apply to</label>
+                <select id="p-force-target" class="plot-select" style="width:100%;">
+                  <option value="mass1">Mass 1</option>
+                  <option value="mass2">Mass 2</option>
+                  <option value="both">Both</option>
+                </select>
+              </div>
+              <div class="param-group">
+                <label for="p-force-A">Amplitude A</label>
+                <input type="number" id="p-force-A" value="1" step="0.1" />
+              </div>
+              <div class="param-group">
+                <label for="p-force-omega">Drive ω</label>
+                <input type="number" id="p-force-omega" value="1" min="0" step="0.1" />
+              </div>
+              <div class="param-group" style="grid-column:1/-1;">
+                <label for="p-force-phi">Phase φ</label>
+                <input type="number" id="p-force-phi" value="0" step="0.1" />
+              </div>
+            </div>
+          </div>
+
+          <div class="section-label">Masses</div>
+          <div class="param-group">
+            <label for="p-m1">m₁ (mass 1)</label>
+            <input type="number" id="p-m1" value="1" min="0.01" step="0.1" />
+          </div>
+          <div class="param-group">
+            <label for="p-m2">m₂ (mass 2)</label>
+            <input type="number" id="p-m2" value="1" min="0.01" step="0.1" />
+          </div>
+
+          <div class="section-label">Spring Constants</div>
+          <div class="param-group">
+            <label for="p-k1">k₁ (left spring)</label>
+            <input type="number" id="p-k1" value="1" min="0" step="0.1" />
+          </div>
+          <div class="param-group">
+            <label for="p-k2">k₂ (coupling)</label>
+            <input type="number" id="p-k2" value="0.5" min="0" step="0.1" />
+          </div>
+          <div class="param-group" style="grid-column:1/-1;" id="k3-field">
+            <label for="p-k3">k₃ (right spring)</label>
+            <input type="number" id="p-k3" value="1" min="0" step="0.1" />
+          </div>
+
+          <div class="section-label">Initial Conditions</div>
+          <div class="param-group">
+            <label for="p-x10">x₁(0)</label>
+            <input type="number" id="p-x10" value="1" step="0.1" />
+          </div>
+          <div class="param-group">
+            <label for="p-x20">x₂(0)</label>
+            <input type="number" id="p-x20" value="0" step="0.1" />
+          </div>
+          <div class="param-group">
+            <label for="p-v10">v₁(0)</label>
+            <input type="number" id="p-v10" value="0" step="0.1" />
+          </div>
+          <div class="param-group">
+            <label for="p-v20">v₂(0)</label>
+            <input type="number" id="p-v20" value="0" step="0.1" />
+          </div>
+
+          <div class="section-label">Time Range</div>
+          <div class="param-group">
+            <label for="p-tmax">t<sub>max</sub></label>
+            <input type="number" id="p-tmax" value="30" min="1" step="1" />
+          </div>
+          <div class="param-group">
+            <label for="p-steps">Plot points</label>
+            <input type="number" id="p-steps" value="600" min="50" max="2000" step="50" />
+          </div>
+
+        </div><!-- /param-grid -->
+
+        <button id="btn-update" class="btn btn-primary btn-full">
+          <span class="spinner spinner-hidden" id="spinner-update"></span>
+          <span class="btn-label">Update</span>
+        </button>
+      </div><!-- /card -->
+    </aside>
+
+    <!-- ── RIGHT: Results ────────────────────────────────────────── -->
+    <section>
+
+      <!-- Analytic solution -->
+      <div class="card" style="margin-bottom:1rem; position:relative;">
+        <h2>Analytic Solution</h2>
+        <div id="force-warning" class="force-warning" style="display:none;">
+          ⚠️ <strong>Forcing is enabled.</strong> The formulas below describe the
+          <em>unforced</em> system. Plots and animation show the numerical (RK4)
+          solution for the forced system.
+        </div>
+        <div class="plot-spinner-overlay plot-spinner-overlay--idle" id="solution-spinner">
+          <div class="big-spinner"></div>
+          <p class="overlay-loading-msg">Computing…</p>
+          <p class="overlay-idle-msg">Press <strong>Update</strong> to compute.</p>
+        </div>
+
+        <div class="omega-row" id="omega-row">
+          <span id="disp-w1">–</span>
+          <span id="disp-w2">–</span>
+          <span style="margin-left:auto; color:var(--clr-muted); font-size:0.78rem;" id="model-label">undamped, 3-spring model</span>
+        </div>
+
+        <div class="solution-grid" style="margin-top:0.6rem;" id="solution-grid">
+          <div class="sol-row"><span class="sol-label">x₁(t) =</span><span id="sol-x1">–</span></div>
+          <div class="sol-row"><span class="sol-label">x₂(t) =</span><span id="sol-x2">–</span></div>
+          <div class="sol-row"><span class="sol-label">v₁(t) =</span><span id="sol-v1">–</span></div>
+          <div class="sol-row"><span class="sol-label">v₂(t) =</span><span id="sol-v2">–</span></div>
+          <div class="sol-row"><span class="sol-label">a₁(t) =</span><span id="sol-a1">–</span></div>
+          <div class="sol-row"><span class="sol-label">a₂(t) =</span><span id="sol-a2">–</span></div>
+        </div>
+      </div>
+
+      <!-- Plots -->
+      <div class="card">
+        <h2>Plots</h2>
+        <div class="plot-tabs">
+          <select id="plot-select" class="plot-select">
+            <option value="pos" selected>Position</option>
+            <option value="vel">Velocity</option>
+            <option value="acc">Acceleration</option>
+            <option value="all">All</option>
+          </select>
+          <button id="btn-play" class="btn btn-secondary plot-tool-btn" title="Play animation"><i class="fa-solid fa-play"></i> Play</button>
+          <button id="btn-reset-zoom" class="btn btn-secondary plot-tool-btn" title="Reset zoom"><i class="fa-solid fa-arrows-rotate"></i> Reset Zoom</button>
+        </div>
+        <!-- Animated spring diagram (duplicate of the header diagram; animated during Play) -->
+        <div id="anim-diagram" class="anim-diagram-wrap">
+          <svg id="svg-anim-three-spring" class="diagram-svg" viewBox="0 0 410 70" xmlns="http://www.w3.org/2000/svg">
+            <!-- wall left -->
+            <rect x="0" y="10" width="10" height="50" fill="#4f8ef7" rx="2"/>
+            <!-- spring k1 -->
+            <polyline data-role="k1-spring" points="10,35 30,35 35,20 45,50 55,20 65,50 75,20 85,50 90,35 110,35"
+                      fill="none" stroke="#8892aa" stroke-width="2"/>
+            <text data-role="k1-label" x="60" y="68" font-size="12" fill="#8892aa" text-anchor="middle">k₁</text>
+            <!-- mass 1 -->
+            <rect data-role="m1-rect" x="110" y="20" width="40" height="30" fill="#4f8ef7" rx="4"/>
+            <text data-role="m1-text" x="130" y="40" font-size="14" fill="white" text-anchor="middle" font-weight="bold">m₁</text>
+            <!-- spring k2 -->
+            <polyline data-role="k2-spring" points="150,35 170,35 175,20 185,50 195,20 205,50 215,20 225,50 230,35 250,35"
+                      fill="none" stroke="#8892aa" stroke-width="2"/>
+            <text data-role="k2-label" x="200" y="68" font-size="12" fill="#8892aa" text-anchor="middle">k₂</text>
+            <!-- mass 2 -->
+            <rect data-role="m2-rect" x="250" y="20" width="40" height="30" fill="#f76f4f" rx="4"/>
+            <text data-role="m2-text" x="270" y="40" font-size="14" fill="white" text-anchor="middle" font-weight="bold">m₂</text>
+            <!-- spring k3 -->
+            <polyline data-role="k3-spring" points="290,35 310,35 315,20 325,50 335,20 345,50 355,20 365,50 370,35 390,35"
+                      fill="none" stroke="#8892aa" stroke-width="2"/>
+            <text data-role="k3-label" x="340" y="68" font-size="12" fill="#8892aa" text-anchor="middle">k₃</text>
+            <!-- wall right -->
+            <rect x="390" y="10" width="10" height="50" fill="#4f8ef7" rx="2"/>
+          </svg>
+          <svg id="svg-anim-two-spring" class="diagram-svg" viewBox="0 0 310 70" xmlns="http://www.w3.org/2000/svg" style="display:none">
+            <!-- wall left -->
+            <rect x="0" y="10" width="10" height="50" fill="#4f8ef7" rx="2"/>
+            <!-- spring k1 -->
+            <polyline data-role="k1-spring" points="10,35 30,35 35,20 45,50 55,20 65,50 75,20 85,50 90,35 110,35"
+                      fill="none" stroke="#8892aa" stroke-width="2"/>
+            <text data-role="k1-label" x="60" y="68" font-size="12" fill="#8892aa" text-anchor="middle">k₁</text>
+            <!-- mass 1 -->
+            <rect data-role="m1-rect" x="110" y="20" width="40" height="30" fill="#4f8ef7" rx="4"/>
+            <text data-role="m1-text" x="130" y="40" font-size="14" fill="white" text-anchor="middle" font-weight="bold">m₁</text>
+            <!-- spring k2 -->
+            <polyline data-role="k2-spring" points="150,35 170,35 175,20 185,50 195,20 205,50 215,20 225,50 230,35 250,35"
+                      fill="none" stroke="#8892aa" stroke-width="2"/>
+            <text data-role="k2-label" x="200" y="68" font-size="12" fill="#8892aa" text-anchor="middle">k₂</text>
+            <!-- mass 2 (free end) -->
+            <rect data-role="m2-rect" x="250" y="20" width="40" height="30" fill="#f76f4f" rx="4"/>
+            <text data-role="m2-text" x="270" y="40" font-size="14" fill="white" text-anchor="middle" font-weight="bold">m₂</text>
+          </svg>
+        </div>
+        <div class="plot-container" id="plot-container">
+          <!-- Plot spinner (unique, overlaid) -->
+          <div class="plot-spinner-overlay plot-spinner-overlay--idle" id="plot-spinner">
+            <div class="big-spinner"></div>
+            <p class="overlay-loading-msg">Computing…</p>
+            <p class="overlay-idle-msg">Press <strong>Update</strong> to load plots.</p>
+          </div>
+          <canvas id="chart-pos" class="chart-canvas active"></canvas>
+          <canvas id="chart-vel" class="chart-canvas"></canvas>
+          <canvas id="chart-acc" class="chart-canvas"></canvas>
+          <canvas id="chart-all" class="chart-canvas"></canvas>
+        </div>
+      </div>
+
+    </section>
+  </div><!-- /main-grid -->
+
+  <!-- ── Analysis Utilities ────────────────────────────────────────── -->
+  <div class="util-grid">
+
+    <!-- Find first time to target -->
+    <div class="card util-card">
+      <h2>Find First Time to Target</h2>
+      <div class="util-form">
+        <div class="param-group">
+          <label for="u-mass">Mass</label>
+          <select id="u-mass" style="width:100%; background:var(--clr-surface); border:1px solid var(--clr-border); border-radius:5px; color:var(--clr-text); padding:0.35rem 0.5rem; font-size:0.88rem; outline:none;">
+            <option value="1">Mass 1</option>
+            <option value="2">Mass 2</option>
+          </select>
+        </div>
+        <div class="param-group">
+          <label for="u-qty">Quantity</label>
+          <select id="u-qty" style="width:100%; background:var(--clr-surface); border:1px solid var(--clr-border); border-radius:5px; color:var(--clr-text); padding:0.35rem 0.5rem; font-size:0.88rem; outline:none;">
+            <option value="x">Position (x)</option>
+            <option value="v">Velocity (v)</option>
+            <option value="a">Acceleration (a)</option>
+          </select>
+        </div>
+        <div class="param-group">
+          <label for="u-target">Target value</label>
+          <input type="number" id="u-target" value="0" step="0.1" />
+        </div>
+        <div class="param-group">
+          <label for="u-tol">Tolerance</label>
+          <input type="number" id="u-tol" value="1e-6" step="1e-7" />
+        </div>
+        <div class="param-group">
+          <label for="u-tsearch-min">Search t<sub>min</sub></label>
+          <input type="number" id="u-tsearch-min" value="0" min="0" step="1" />
+        </div>
+        <div class="param-group">
+          <label for="u-tsearch-max">Search t<sub>max</sub></label>
+          <input type="number" id="u-tsearch-max" value="100" min="1" step="1" />
+        </div>
+      </div>
+      <button id="btn-findtime" class="btn btn-primary btn-full">
+        <span class="spinner spinner-hidden" id="spinner-findtime"></span>
+        <span class="btn-label">Find First Time</span>
+      </button>
+      <div class="result-box" id="result-findtime">
+        <span class="res-none">—</span>
+      </div>
+    </div>
+
+    <!-- Value at time -->
+    <div class="card util-card">
+      <h2>Values at Specified Time</h2>
+      <div class="util-form">
+        <div class="param-group full-width">
+          <label for="u-time">Time t (optional)</label>
+          <input type="number" id="u-time" placeholder="e.g. 3.14" step="0.01" />
+        </div>
+      </div>
+      <button id="btn-valattime" class="btn btn-primary btn-full">
+        <span class="spinner spinner-hidden" id="spinner-valattime"></span>
+        <span class="btn-label">Compute Values</span>
+      </button>
+      <div class="result-box" id="result-valattime">
+        <span class="res-none">Enter a time value above, then click Compute.</span>
+      </div>
+    </div>
+
+  </div><!-- /util-grid -->
+
+</div><!-- /page-wrapper -->
+
+<!-- ── Inline scripts (loaded after DOM) ─────────────────────────────── -->
+<script type="module">
+// ── Fraction utilities (inline, no bundler needed) ──────────────────────
+function gcd(a, b) {
+  a = Math.abs(Math.round(a)); b = Math.abs(Math.round(b));
+  while (b) { const t = b; b = a % b; a = t; }
+  return a || 1;
+}
+
+function reduceFraction(num, den) {
+  if (den === 0) return { num: Infinity, den: 1 };
+  if (num === 0) return { num: 0, den: 1 };
+  const sign = (num < 0) !== (den < 0) ? -1 : 1;
+  const a = Math.abs(Math.round(num)), b = Math.abs(Math.round(den));
+  const g = gcd(a, b);
+  return { num: sign * (a / g), den: b / g };
+}
+
+function decimalToFraction(x, maxDen = 10000, tol = 1e-9) {
+  if (!Number.isFinite(x)) return { num: x > 0 ? Infinity : -Infinity, den: 1 };
+  if (Math.abs(x) < tol) return { num: 0, den: 1 };
+  const sign = x < 0 ? -1 : 1;
+  x = Math.abs(x);
+  let lo_n = 0, lo_d = 1, hi_n = 1, hi_d = 0;
+  let best_n = Math.round(x), best_d = 1, bestErr = Math.abs(x - best_n);
+  for (let i = 0; i < 200; i++) {
+    const mn = lo_n + hi_n, md = lo_d + hi_d;
+    if (md > maxDen) break;
+    const mv = mn / md, err = Math.abs(x - mv);
+    if (err < bestErr) { bestErr = err; best_n = mn; best_d = md; }
+    if (err < tol) break;
+    if (mv < x) { lo_n = mn; lo_d = md; } else { hi_n = mn; hi_d = md; }
+  }
+  return reduceFraction(sign * best_n, best_d);
+}
+
+function fracToLatex(num, den, opts = {}) {
+  const { showPlus = false, skipOne = false } = opts;
+  if (num === 0) return '0';
+  const sign = num < 0 ? '-' : showPlus ? '+' : '';
+  const a = Math.abs(num), b = Math.abs(den);
+  let mag;
+  if (b === 1) { mag = (a === 1 && skipOne) ? '' : `${a}`; }
+  else { mag = `\\frac{${a}}{${b}}`; }
+  return sign + mag;
+}
+
+function decimalToLatex(x, opts = {}) {
+  const { maxDen = 10000, ...fmtOpts } = opts;
+  const { num, den } = decimalToFraction(x, maxDen);
+  return fracToLatex(num, den, fmtOpts);
+}
+
+// ── Oscillator physics ──────────────────────────────────────────────────
+class CoupledOscillator {
+  constructor(p) {
+    Object.assign(this, p);
+    this._compute();
+  }
+  _compute() {
+    const { m1, m2, k1, k2, k3, x10, x20, v10, v20 } = this;
+    const a = (k1 + k2) / m1, b = (k2 + k3) / m2;
+    const c2 = (k2 * k2) / (m1 * m2);
+    const disc = Math.sqrt((a - b) ** 2 + 4 * c2);
+    const lam1 = ((a + b) - disc) / 2, lam2 = ((a + b) + disc) / 2;
+    this.omega1 = Math.sqrt(Math.max(0, lam1));
+    this.omega2 = Math.sqrt(Math.max(0, lam2));
+    this._lamSum = a + b;
+    this._discSq = (a - b) ** 2 + 4 * c2;
+    this.r1 = Math.abs(k2) < 1e-14 ? 0 : (k1 + k2 - lam1 * m1) / k2;
+    this.r2 = Math.abs(k2) < 1e-14 ? 0 : (k1 + k2 - lam2 * m1) / k2;
+    if (Math.abs(k2) < 1e-14) {
+      const w1u = Math.sqrt(Math.max(0, k1/m1)), w2u = Math.sqrt(Math.max(0, k3/m2));
+      this.omega1 = w1u; this.omega2 = w2u;
+      this.r1 = 0; this.r2 = 0; this.A1 = x10; this.A2 = 0;
+      this.B1 = w1u > 1e-14 ? v10/w1u : 0; this.B2 = 0;
+      this.coeffs1 = { cw1: x10, sw1: this.B1, cw2: 0, sw2: 0 };
+      this.coeffs2 = { cw1: 0, sw1: 0, cw2: x20, sw2: w2u > 1e-14 ? v20/w2u : 0 };
+      return;
+    }
+    this.r1 = (k1 + k2 - lam1 * m1) / k2;
+    this.r2 = (k1 + k2 - lam2 * m1) / k2;
+    const { r1, r2, omega1: w1, omega2: w2 } = this;
+    const denom = r1 - r2;
+    if (Math.abs(denom) < 1e-14) {
+      this.A1 = x10; this.A2 = 0;
+    } else {
+      this.A1 = (x20 - r2 * x10) / denom;
+      this.A2 = x10 - this.A1;
+    }
+    if (Math.abs(denom) < 1e-14 || Math.abs(w1) < 1e-14) {
+      this.B1 = w1 > 1e-14 ? v10 / w1 : 0; this.B2 = 0;
+    } else {
+      this.B1 = (v20 - r2 * v10) / (w1 * denom);
+      this.B2 = w2 > 1e-14 ? (v10 - w1 * this.B1) / w2 : 0;
+    }
+    this.coeffs1 = { cw1: this.A1, sw1: this.B1, cw2: this.A2, sw2: this.B2 };
+    this.coeffs2 = { cw1: r1*this.A1, sw1: r1*this.B1, cw2: r2*this.A2, sw2: r2*this.B2 };
+  }
+  position(mass, t) {
+    const c = mass === 1 ? this.coeffs1 : this.coeffs2;
+    const { omega1: w1, omega2: w2 } = this;
+    return c.cw1*Math.cos(w1*t)+c.sw1*Math.sin(w1*t)+c.cw2*Math.cos(w2*t)+c.sw2*Math.sin(w2*t);
+  }
+  velocity(mass, t) {
+    const c = mass === 1 ? this.coeffs1 : this.coeffs2;
+    const { omega1: w1, omega2: w2 } = this;
+    return -c.cw1*w1*Math.sin(w1*t)+c.sw1*w1*Math.cos(w1*t)
+           -c.cw2*w2*Math.sin(w2*t)+c.sw2*w2*Math.cos(w2*t);
+  }
+  acceleration(mass, t) {
+    const c = mass === 1 ? this.coeffs1 : this.coeffs2;
+    const { omega1: w1, omega2: w2 } = this;
+    return -c.cw1*w1*w1*Math.cos(w1*t)-c.sw1*w1*w1*Math.sin(w1*t)
+           -c.cw2*w2*w2*Math.cos(w2*t)-c.sw2*w2*w2*Math.sin(w2*t);
+  }
+  valueAtTime(t) {
+    return {
+      x1: this.position(1,t), v1: this.velocity(1,t), a1: this.acceleration(1,t),
+      x2: this.position(2,t), v2: this.velocity(2,t), a2: this.acceleration(2,t),
+    };
+  }
+  firstTimeTo(mass, qty, target, opts = {}) {
+    const { tMin=0, tMax=100, dt=0.01, tolerance=1e-9 } = opts;
+    const fn = qty==='x' ? t=>this.position(mass,t)
+             : qty==='v' ? t=>this.velocity(mass,t)
+             : t=>this.acceleration(mass,t);
+    let prevT=tMin, prevF=fn(tMin)-target;
+    if (Math.abs(prevF) < tolerance) return tMin;
+    for (let t=tMin+dt; t<=tMax+dt*0.5; t+=dt) {
+      const curT=Math.min(t,tMax), curF=fn(curT)-target;
+      if (Math.abs(curF)<tolerance) return curT;
+      if (prevF*curF < 0) {
+        let lo=prevT, hi=curT;
+        for (let i=0;i<60;i++) {
+          const mid=(lo+hi)/2, mf=fn(mid)-target;
+          if (Math.abs(mf)<tolerance) return mid;
+          if (prevF*mf<=0) hi=mid; else { lo=mid; prevF=mf; }
+        }
+        return (lo+hi)/2;
+      }
+      prevT=curT; prevF=curF;
+      if (curT>=tMax) break;
+    }
+    return null;
+  }
+}
+
+// ── ForcedOscillatorRK4 ─────────────────────────────────────────────────
+/**
+ * Numerical (RK4) solver for a driven coupled harmonic oscillator.
+ * Equations of motion:
+ *   m₁ ẍ₁ = -(k₁+k₂) x₁ + k₂ x₂ + F₁(t)
+ *   m₂ ẍ₂ =  k₂ x₁ − (k₂+k₃) x₂ + F₂(t)
+ * Provides the same interface as CoupledOscillator.
+ */
+class ForcedOscillatorRK4 {
+  constructor(params) {
+    const {
+      m1, m2, k1, k2, k3,
+      x10 = 0, x20 = 0, v10 = 0, v20 = 0,
+      tMax = 30, steps = 600,
+      forceType = 'cos',
+      forceTarget = 'mass1',
+      forceA = 1, forceOmega = 1, forcePhi = 0,
+    } = params;
+    this.m1 = m1; this.m2 = m2;
+    this.k1 = k1; this.k2 = k2; this.k3 = k3;
+
+    const trigFn = forceType === 'sin'
+      ? t => forceA * Math.sin(forceOmega * t - forcePhi)
+      : t => forceA * Math.cos(forceOmega * t - forcePhi);
+    this._F1 = (forceTarget === 'mass1' || forceTarget === 'both') ? trigFn : () => 0;
+    this._F2 = (forceTarget === 'mass2' || forceTarget === 'both') ? trigFn : () => 0;
+
+    const h = tMax / steps;
+    const x1s = new Float64Array(steps + 1);
+    const v1s = new Float64Array(steps + 1);
+    const x2s = new Float64Array(steps + 1);
+    const v2s = new Float64Array(steps + 1);
+    x1s[0] = x10; v1s[0] = v10; x2s[0] = x20; v2s[0] = v20;
+
+    const deriv = (t, x1, v1, x2, v2) => [
+      v1,
+      (-(k1 + k2) * x1 + k2 * x2 + this._F1(t)) / m1,
+      v2,
+      (k2 * x1 - (k2 + k3) * x2 + this._F2(t)) / m2,
+    ];
+
+    let cx1 = x10, cv1 = v10, cx2 = x20, cv2 = v20;
+    for (let i = 0; i < steps; i++) {
+      const t = i * h;
+      const [dv1k1, da1k1, dv2k1, da2k1] = deriv(t,       cx1,                cv1,                cx2,                cv2);
+      const [dv1k2, da1k2, dv2k2, da2k2] = deriv(t + h/2, cx1 + h/2*dv1k1,   cv1 + h/2*da1k1,   cx2 + h/2*dv2k1,   cv2 + h/2*da2k1);
+      const [dv1k3, da1k3, dv2k3, da2k3] = deriv(t + h/2, cx1 + h/2*dv1k2,   cv1 + h/2*da1k2,   cx2 + h/2*dv2k2,   cv2 + h/2*da2k2);
+      const [dv1k4, da1k4, dv2k4, da2k4] = deriv(t + h,   cx1 + h*dv1k3,     cv1 + h*da1k3,     cx2 + h*dv2k3,     cv2 + h*da2k3);
+      cx1 += h/6*(dv1k1 + 2*dv1k2 + 2*dv1k3 + dv1k4);
+      cv1 += h/6*(da1k1 + 2*da1k2 + 2*da1k3 + da1k4);
+      cx2 += h/6*(dv2k1 + 2*dv2k2 + 2*dv2k3 + dv2k4);
+      cv2 += h/6*(da2k1 + 2*da2k2 + 2*da2k3 + da2k4);
+      x1s[i+1] = cx1; v1s[i+1] = cv1;
+      x2s[i+1] = cx2; v2s[i+1] = cv2;
+    }
+    this._x1s = x1s; this._v1s = v1s;
+    this._x2s = x2s; this._v2s = v2s;
+    this._h = h; this._steps = steps; this._tMax = tMax;
+    // Keep omega1/omega2 at 0; callers that need the analytic values use the
+    // separate unforcedOsc reference stored on the application state.
+    this.omega1 = 0; this.omega2 = 0;
+  }
+
+  _interp(arr, t) {
+    if (t <= 0) return arr[0];
+    if (t >= this._tMax) return arr[this._steps];
+    const idx = Math.floor(t / this._h);
+    const frac = (t - idx * this._h) / this._h;
+    return arr[idx] * (1 - frac) + arr[idx + 1] * frac;
+  }
+
+  position(mass, t)     { return this._interp(mass === 1 ? this._x1s : this._x2s, t); }
+  velocity(mass, t)     { return this._interp(mass === 1 ? this._v1s : this._v2s, t); }
+  acceleration(mass, t) {
+    const x1 = this.position(1, t), x2 = this.position(2, t);
+    const { k1, k2, k3, m1, m2 } = this;
+    return mass === 1
+      ? (-(k1+k2)*x1 + k2*x2 + this._F1(t)) / m1
+      : (k2*x1 - (k2+k3)*x2 + this._F2(t)) / m2;
+  }
+  valueAtTime(t) {
+    return {
+      x1: this.position(1,t),     v1: this.velocity(1,t),     a1: this.acceleration(1,t),
+      x2: this.position(2,t),     v2: this.velocity(2,t),     a2: this.acceleration(2,t),
+    };
+  }
+  firstTimeTo(mass, quantity, target, opts = {}) {
+    const { tMin=0, tMax=this._tMax, dt=0.01, tolerance=1e-9 } = opts;
+    const searchMax = Math.min(tMax, this._tMax);
+    const fn = quantity==='x' ? t=>this.position(mass,t)
+             : quantity==='v' ? t=>this.velocity(mass,t)
+             : t=>this.acceleration(mass,t);
+    let prevT=tMin, prevF=fn(tMin)-target;
+    if (Math.abs(prevF)<tolerance) return tMin;
+    for (let t=tMin+dt; t<=searchMax+dt*0.5; t+=dt) {
+      const curT=Math.min(t,searchMax), curF=fn(curT)-target;
+      if (Math.abs(curF)<tolerance) return curT;
+      if (prevF*curF<0) {
+        let lo=prevT, hi=curT;
+        for (let i=0;i<60;i++) {
+          const mid=(lo+hi)/2, mf=fn(mid)-target;
+          if (Math.abs(mf)<tolerance) return mid;
+          if (prevF*mf<=0) hi=mid; else { lo=mid; prevF=mf; }
+        }
+        return (lo+hi)/2;
+      }
+      prevT=curT; prevF=curF;
+      if (curT>=searchMax) break;
+    }
+    return null;
+  }
+}
+
+// ── Minimum spinner duration ────────────────────────────────────────────
+const SPINNER_MS = 2000;
+
+// ── Omega in radical / exact form ────────────────────────────────────────
+/**
+ * Return a KaTeX-ready string for an angular frequency w.
+ *  - If w is rational with denominator ≤ 100, return an exact fraction.
+ *  - If w² is rational with denominator ≤ 1000, return √(p/q) radical form.
+ *  - Otherwise fall back to a 5-significant-figure decimal string.
+ */
+function omegaExactLatex(w, lamSum, discSq) {
+  if (Math.abs(w) < 1e-14) return '0';
+  // Check if w itself is rational with a small denominator (≤ 100)
+  const { num: on, den: od } = decimalToFraction(w, 100, 1e-9);
+  if (Math.abs(on / od - w) < 1e-9) return fracToLatex(on, od);
+  // Try simple radical form  ω = √(p/q)  where p/q has denominator ≤ 1000
+  const lam = w * w;
+  const { num: ln, den: ld } = decimalToFraction(lam, 1000, 1e-8);
+  if (Math.abs(ln / ld - lam) < 1e-7)
+    return ld === 1 ? `\\sqrt{${ln}}` : `\\sqrt{\\frac{${ln}}{${ld}}}`;
+  // Try nested radical form: ω = √((lamSum ± √discSq) / 2)
+  if (lamSum !== null && lamSum !== undefined && discSq !== null && discSq !== undefined && discSq > 1e-14) {
+    const { num: sn, den: sd } = decimalToFraction(lamSum, 2000, 1e-9);
+    const { num: dn, den: dd } = decimalToFraction(discSq, 2000, 1e-9);
+    if (Math.abs(sn / sd - lamSum) < 1e-9 && Math.abs(dn / dd - discSq) < 1e-9) {
+      // Check if dd is a perfect integer square so √(dn/dd) = √dn / sqrtDen
+      const sqrtDen = Math.round(Math.sqrt(dd));
+      if (Math.abs(sqrtDen * sqrtDen - dd) < 0.5) {
+        // lam = (sn/sd ± √dn/sqrtDen) / 2 = (sn·sqrtDen ± sd·√dn) / (2·sd·sqrtDen)
+        const numInt = sn * sqrtDen;
+        const numRadCoeff = sd;
+        const den = 2 * sd * sqrtDen;
+        const g = gcd(gcd(numInt, numRadCoeff), den);
+        const A = numInt / g;
+        const B = numRadCoeff / g;
+        const D = den / g;
+        const dnFinal = B * B * dn;  // absorb coefficient into radicand
+        const sign = lam > lamSum / 2 ? '+' : '-';
+        return `\\sqrt{\\dfrac{${A} ${sign} \\sqrt{${dnFinal}}}{${D}}}`;
+      }
+    }
+  }
+  // Fallback to 5-significant-figure decimal
+  return w.toPrecision(5).replace(/\.?0+$/, '');
+}
+
+// ── LaTeX generation ────────────────────────────────────────────────────
+function buildExpr(terms) {
+  const parts = []; let first = true;
+  for (const { coeff, trig, wLabel } of terms) {
+    const { num, den } = decimalToFraction(coeff);
+    if (num === 0) continue;
+    const sign = num < 0 ? '-' : first ? '' : '+';
+    const a = Math.abs(num), b = Math.abs(den);
+    let mag;
+    if (b === 1) { mag = a === 1 ? '' : `${a}`; }
+    else { mag = `\\frac{${a}}{${b}}`; }
+    parts.push(`${sign}${mag}${trig}\\!\\left(${wLabel}\\,t\\right)`);
+    first = false;
+  }
+  return parts.length ? parts.join(' ') : '0';
+}
+
+function generateLatex(osc) {
+  const { omega1: w1, omega2: w2, coeffs1: c1, coeffs2: c2 } = osc;
+  // Substitute actual ω values in radical form instead of ω₁/ω₂ symbols
+  const wl1 = omegaExactLatex(w1, osc._lamSum, osc._discSq);
+  const wl2 = omegaExactLatex(w2, osc._lamSum, osc._discSq);
+  function solve(c) {
+    return {
+      x: buildExpr([
+        {coeff:c.cw1, trig:'\\cos', wLabel:wl1},
+        {coeff:c.sw1, trig:'\\sin', wLabel:wl1},
+        {coeff:c.cw2, trig:'\\cos', wLabel:wl2},
+        {coeff:c.sw2, trig:'\\sin', wLabel:wl2},
+      ]),
+      v: buildExpr([
+        {coeff:-c.cw1*w1, trig:'\\sin', wLabel:wl1},
+        {coeff: c.sw1*w1, trig:'\\cos', wLabel:wl1},
+        {coeff:-c.cw2*w2, trig:'\\sin', wLabel:wl2},
+        {coeff: c.sw2*w2, trig:'\\cos', wLabel:wl2},
+      ]),
+      a: buildExpr([
+        {coeff:-c.cw1*w1*w1, trig:'\\cos', wLabel:wl1},
+        {coeff:-c.sw1*w1*w1, trig:'\\sin', wLabel:wl1},
+        {coeff:-c.cw2*w2*w2, trig:'\\cos', wLabel:wl2},
+        {coeff:-c.sw2*w2*w2, trig:'\\sin', wLabel:wl2},
+      ]),
+    };
+  }
+  const s1=solve(c1), s2=solve(c2);
+  return { x1:s1.x, v1:s1.v, a1:s1.a, x2:s2.x, v2:s2.v, a2:s2.a };
+}
+
+// ── Chart instances ─────────────────────────────────────────────────────
+const charts = {};
+const CHART_IDS = ['pos','vel','acc','all'];
+
+// ── Marker & animation global state ─────────────────────────────────────
+let markerTime  = null;   // time set by "Find First Time" to mark on charts
+let currentTArr = [];     // full time array for current solve
+let svgScale    = 20;     // SVG pixels per physics displacement unit
+const ANIM_DURATION_MS = 6000; // milliseconds for a full play-through
+const animState = { active: false, rafId: null, startTs: null, duration: ANIM_DURATION_MS };
+
+// ── Spring polyline generator ────────────────────────────────────────────
+/**
+ * Return a points string for a zigzag spring between (x1,35) and (x2,35).
+ * Uses a lead segment at each end, then 6 equal zigzag peaks/valleys.
+ * SVG y-center is 35; zigzag amplitude is ±15 px.
+ */
+function springPolyline(x1, x2) {
+  var totalWidth = x2 - x1;
+  if (totalWidth < 2) return x1 + ',35 ' + x2 + ',35';
+  var lead      = Math.min(20, totalWidth * 0.18);
+  var amplitude = 15; // px above/below the centre line
+  var centerY   = 35; // SVG y-coordinate of the spring centre line
+  var zigzagCount = 6;
+  var zigzagStart  = x1 + lead;
+  var zigzagEnd    = x2 - lead;
+  var zigzagLength = zigzagEnd - zigzagStart;
+  var step = zigzagLength / (zigzagCount + 1);
+  var pts  = [x1 + ',' + centerY, zigzagStart.toFixed(1) + ',' + centerY];
+  for (var i = 1; i <= zigzagCount; i++) {
+    pts.push((zigzagStart + i * step).toFixed(1) + ',' +
+             (centerY + (i % 2 === 1 ? -amplitude : amplitude)));
+  }
+  pts.push(zigzagEnd.toFixed(1) + ',' + centerY, x2 + ',' + centerY);
+  return pts.join(' ');
+}
+
+// ── SVG diagram animation ────────────────────────────────────────────────
+/**
+ * Update the spring diagram SVG to show physics positions at time t.
+ */
+function updateSvgAnimation(t) {
+  if (!currentOsc) return;
+  var isThree = document.getElementById('p-config').value === 'three-spring';
+  var svg = document.getElementById(isThree ? 'svg-anim-three-spring' : 'svg-anim-two-spring');
+  if (!svg) return;
+
+  // SVG layout constants (match the static HTML values)
+  var massWidth  = 40;  // width of each mass rectangle in SVG units
+  var wallLeft   = 10;  // right edge of the left wall
+  var wallRight  = 390; // left edge of the right wall (three-spring only)
+  var m1Equilibrium = 110; // left edge of mass 1 at rest
+  var m2Equilibrium = 250; // left edge of mass 2 at rest
+
+  var d1 = currentOsc.position(1, t) * svgScale;
+  var d2 = currentOsc.position(2, t) * svgScale;
+  var m1x = m1Equilibrium + d1;
+  var m2x = m2Equilibrium + d2;
+  // Clamp to prevent overlap or out-of-bounds
+  m1x = Math.max(wallLeft + 4, m1x);
+  m2x = Math.max(m1x + massWidth + 4, m2x);
+  if (isThree) { m2x = Math.min(wallRight - massWidth - 4, m2x); }
+  m1x = Math.min(m2x - massWidth - 4, m1x);
+
+  var m1Center = m1x + massWidth / 2;
+  var m2Center = m2x + massWidth / 2;
+
+  function updateSvgElement(role, attr, val) {
+    var el = svg.querySelector('[data-role="' + role + '"]');
+    if (el) el.setAttribute(attr, val);
+  }
+
+  updateSvgElement('m1-rect',  'x', m1x.toFixed(1));
+  updateSvgElement('m1-text',  'x', m1Center.toFixed(1));
+  updateSvgElement('m2-rect',  'x', m2x.toFixed(1));
+  updateSvgElement('m2-text',  'x', m2Center.toFixed(1));
+  updateSvgElement('k1-spring', 'points', springPolyline(wallLeft, m1x));
+  updateSvgElement('k1-label',  'x', ((wallLeft + m1x) / 2).toFixed(1));
+  updateSvgElement('k2-spring', 'points', springPolyline(m1x + massWidth, m2x));
+  updateSvgElement('k2-label',  'x', ((m1x + massWidth + m2x) / 2).toFixed(1));
+  if (isThree) {
+    updateSvgElement('k3-spring', 'points', springPolyline(m2x + massWidth, wallRight));
+    updateSvgElement('k3-label',  'x', ((m2x + massWidth + wallRight) / 2).toFixed(1));
+  }
+}
+
+function computeSvgScale() {
+  if (!currentOsc || !currentTArr.length) return 20;
+  var minAmplitude = 1e-9; // avoid division by zero for a stationary system
+  var maxAmp = minAmplitude;
+  for (var i = 0; i < currentTArr.length; i++) {
+    var a = Math.abs(currentOsc.position(1, currentTArr[i]));
+    var b = Math.abs(currentOsc.position(2, currentTArr[i]));
+    if (a > maxAmp) maxAmp = a;
+    if (b > maxAmp) maxAmp = b;
+  }
+  // Map peak displacement to 30 SVG px; cap at 40 px/unit to avoid excessive stretching
+  return Math.min(40, 30 / maxAmp);
+}
+
+// ── Marker annotation helpers ────────────────────────────────────────────
+function getAnnotations(tArr) {
+  if (markerTime === null || !tArr || !tArr.length) return {};
+  // Find the index in tArr whose time is closest to markerTime
+  var closestIndex = 0, minDistance = Infinity;
+  for (var i = 0; i < tArr.length; i++) {
+    var distance = Math.abs(tArr[i] - markerTime);
+    if (distance < minDistance) { minDistance = distance; closestIndex = i; }
+  }
+  return {
+    targetMarker: {
+      type: 'line',
+      xMin: closestIndex, xMax: closestIndex,
+      borderColor: 'rgba(255,215,0,0.85)',
+      borderWidth: 2,
+      borderDash: [5, 4],
+      label: {
+        display: true,
+        content: 't = ' + markerTime.toFixed(4),
+        position: 'start',
+        backgroundColor: 'rgba(255,215,0,0.12)',
+        color: '#ffd700',
+        font: { size: 10 }
+      }
+    }
+  };
+}
+
+function applyMarkerToAllCharts() {
+  CHART_IDS.forEach(function(id) {
+    if (charts[id]) {
+      charts[id].options.plugins.annotation = { annotations: getAnnotations(currentTArr) };
+      charts[id].update('none');
+    }
+  });
+}
+
+// ── Play / Pause animation ───────────────────────────────────────────────
+function stopAnimation() {
+  animState.active = false;
+  if (animState.rafId) { cancelAnimationFrame(animState.rafId); animState.rafId = null; }
+  var btn = document.getElementById('btn-play');
+  if (btn) {
+    var icon = document.createElement('i');
+    icon.className = 'fa-solid fa-play';
+    btn.textContent = '';
+    btn.appendChild(icon);
+    btn.appendChild(document.createTextNode(' Play'));
+    btn.classList.remove('playing');
+  }
+  // Restore full data + annotations on all charts
+  if (currentOsc && currentTArr.length) {
+    var activeId = document.getElementById('plot-select').value;
+    CHART_IDS.forEach(function(id) {
+      if (!charts[id]) return;
+      charts[id].data = {
+        labels: currentTArr.map(function(t){ return t.toFixed(2); }),
+        datasets: buildDatasets(currentOsc, currentTArr, id)
+      };
+      charts[id].options.plugins.annotation = { annotations: getAnnotations(currentTArr) };
+      charts[id].update('none');
+      document.getElementById('chart-' + id).style.display = (id === activeId) ? 'block' : 'none';
+    });
+  }
+  // Reset SVG to t=0 (initial conditions)
+  if (currentOsc) updateSvgAnimation(0);
+}
+
+function startAnimation() {
+  if (!currentOsc || !currentTArr.length) return;
+  svgScale = computeSvgScale();
+  animState.active = true;
+  animState.startTs = null;
+  var btn = document.getElementById('btn-play');
+  if (btn) {
+    var icon = document.createElement('i');
+    icon.className = 'fa-solid fa-pause';
+    btn.textContent = '';
+    btn.appendChild(icon);
+    btn.appendChild(document.createTextNode(' Pause'));
+    btn.classList.add('playing');
+  }
+
+  function tick(ts) {
+    if (!animState.active) return;
+    if (!animState.startTs) animState.startTs = ts;
+    var progress = Math.min((ts - animState.startTs) / animState.duration, 1);
+    var nPoints  = Math.max(1, Math.round(progress * currentTArr.length));
+    var partialT = currentTArr.slice(0, nPoints);
+    var curTime  = currentTArr[nPoints - 1];
+
+    // Update the currently visible chart with growing data
+    var activeId = document.getElementById('plot-select').value;
+    if (charts[activeId]) {
+      charts[activeId].data = {
+        labels:   partialT.map(function(t){ return t.toFixed(2); }),
+        datasets: buildDatasets(currentOsc, partialT, activeId)
+      };
+      charts[activeId].update('none');
+    }
+    // Animate the SVG spring diagram
+    updateSvgAnimation(curTime);
+
+    if (progress < 1) {
+      animState.rafId = requestAnimationFrame(tick);
+    } else {
+      stopAnimation();
+    }
+  }
+  animState.rafId = requestAnimationFrame(tick);
+}
+
+function buildDatasets(osc, tArr, kind) {
+  const colors = ['#4f8ef7', '#f76f4f'];
+  const masses = [1, 2];
+  const labels = ['Mass 1', 'Mass 2'];
+  if (kind === 'all') {
+    const fns = [
+      { label: 'x₁', fn: t=>osc.position(1,t),     color:'#4f8ef7', dash:[] },
+      { label: 'x₂', fn: t=>osc.position(2,t),     color:'#f76f4f', dash:[] },
+      { label: 'v₁', fn: t=>osc.velocity(1,t),     color:'#4fccf7', dash:[5,3] },
+      { label: 'v₂', fn: t=>osc.velocity(2,t),     color:'#f7c44f', dash:[5,3] },
+      { label: 'a₁', fn: t=>osc.acceleration(1,t), color:'#a04ff7', dash:[2,2] },
+      { label: 'a₂', fn: t=>osc.acceleration(2,t), color:'#4ff76f', dash:[2,2] },
+    ];
+    return fns.map(({ label, fn, color, dash }) => ({
+      label,
+      data: tArr.map(fn),
+      borderColor: color,
+      borderWidth: 1.5,
+      borderDash: dash,
+      pointRadius: 0,
+      tension: 0.3,
+    }));
+  }
+  const fnForMass = kind === 'vel'
+    ? (m,t) => osc.velocity(m,t)
+    : kind === 'acc'
+    ? (m,t) => osc.acceleration(m,t)
+    : (m,t) => osc.position(m,t);
+  return masses.map((m, i) => ({
+    label: labels[i],
+    data: tArr.map(t => fnForMass(m,t)),
+    borderColor: colors[i],
+    borderWidth: 1.8,
+    pointRadius: 0,
+    tension: 0.3,
+  }));
+}
+
+const yLabels = { pos:'Displacement', vel:'Velocity', acc:'Acceleration', all:'Value' };
+
+function buildOrUpdateChart(id, osc, tArr) {
+  const canvas = document.getElementById(`chart-${id}`);
+  const datasets = buildDatasets(osc, tArr, id);
+  const data = { labels: tArr.map(t => t.toFixed(2)), datasets };
+  const annot = getAnnotations(tArr);
+  if (charts[id]) {
+    charts[id].data = data;
+    charts[id].options.plugins.annotation = { annotations: annot };
+    charts[id].update('none');
+    return;
+  }
+  charts[id] = new Chart(canvas, {
+    type: 'line',
+    data,
+    options: {
+      responsive: true,
+      animation: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { labels: { color: '#e2e8f0', font: { size: 12 } } },
+        tooltip: { mode: 'index' },
+        annotation: { annotations: annot },
+        zoom: {
+          zoom: {
+            drag: { enabled: true, backgroundColor: 'rgba(100,130,220,0.15)', borderColor: 'rgba(100,130,220,0.6)', borderWidth: 1 },
+            wheel: { enabled: true },
+            pinch: { enabled: true },
+            mode: 'xy'
+          },
+          pan: { enabled: false }
+        }
+      },
+      scales: {
+        x: {
+          ticks: { color:'#8892aa', maxTicksLimit:12,
+            callback(v,i){ return Number(this.getLabelForValue(i)).toFixed(1); } },
+          grid: { color:'rgba(255,255,255,0.05)' },
+          title: { display:true, text:'Time (t)', color:'#8892aa' },
+        },
+        y: {
+          ticks: { color:'#8892aa' },
+          grid: { color:'rgba(255,255,255,0.05)' },
+          title: { display:true, text: yLabels[id], color:'#8892aa' },
+        },
+      },
+    },
+  });
+}
+
+// ── Spinner helpers ─────────────────────────────────────────────────────
+function withSpinner(spinnerId, btnId, minMs, fn) {
+  const spinner = document.getElementById(spinnerId);
+  const btn     = document.getElementById(btnId);
+  const label   = btn.querySelector('.btn-label');
+  spinner.classList.remove('spinner-hidden');
+  if (label) label.style.display = 'none';
+  btn.disabled = true;
+  const start = Date.now();
+  const finish = (result) => {
+    const elapsed = Date.now() - start;
+    const wait = Math.max(0, minMs - elapsed);
+    setTimeout(() => {
+      spinner.classList.add('spinner-hidden');
+      if (label) label.style.display = '';
+      btn.disabled = false;
+    }, wait);
+    return result;
+  };
+  try {
+    const r = fn();
+    if (r && typeof r.then === 'function') return r.then(finish, err => { finish(); throw err; });
+    return finish(r);
+  } catch (e) { finish(); throw e; }
+}
+
+// ── KaTeX rendering ─────────────────────────────────────────────────────
+function renderKatex(elId, latex) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  try {
+    katex.render(latex, el, { throwOnError: false, displayMode: false });
+  } catch {
+    el.textContent = latex;
+  }
+}
+
+// ── Config change ───────────────────────────────────────────────────────
+function onConfigChange() {
+  const cfg = document.getElementById('p-config').value;
+  const k3Field   = document.getElementById('k3-field');
+  const svgThree  = document.getElementById('svg-three-spring');
+  const svgTwo    = document.getElementById('svg-two-spring');
+  const animThree = document.getElementById('svg-anim-three-spring');
+  const animTwo   = document.getElementById('svg-anim-two-spring');
+  const modelLabel = document.getElementById('model-label');
+  if (k3Field)    k3Field.style.display    = cfg === 'three-spring' ? '' : 'none';
+  if (svgThree)   svgThree.style.display   = cfg === 'three-spring' ? '' : 'none';
+  if (svgTwo)     svgTwo.style.display     = cfg === 'two-spring'   ? '' : 'none';
+  if (animThree)  animThree.style.display  = cfg === 'three-spring' ? '' : 'none';
+  if (animTwo)    animTwo.style.display    = cfg === 'two-spring'   ? '' : 'none';
+  if (modelLabel) modelLabel.textContent   = cfg === 'three-spring'
+                    ? 'undamped, 3-spring model' : 'undamped, 2-spring model';
+}
+
+// ── Global oscillator state ─────────────────────────────────────────────
+let currentOsc = null;
+
+function readParams() {
+  const g = id => parseFloat(document.getElementById(id).value) || 0;
+  const config = document.getElementById('p-config').value;
+  return {
+    m1:  Math.max(0.001, g('p-m1')),
+    m2:  Math.max(0.001, g('p-m2')),
+    k1:  Math.max(0,     g('p-k1')),
+    k2:  Math.max(0,     g('p-k2')),
+    k3:  config === 'two-spring' ? 0 : Math.max(0, g('p-k3')),
+    x10: g('p-x10'), x20: g('p-x20'),
+    v10: g('p-v10'), v20: g('p-v20'),
+  };
+}
+
+function readForceParams() {
+  const forceType   = document.getElementById('p-force-type').value;
+  const forceTarget = document.getElementById('p-force-target').value;
+  const forceA      = parseFloat(document.getElementById('p-force-A').value)     || 0;
+  const forceOmega  = parseFloat(document.getElementById('p-force-omega').value) || 0;
+  const forcePhi    = parseFloat(document.getElementById('p-force-phi').value)   || 0;
+  return { forceType, forceTarget, forceA, forceOmega, forcePhi };
+}
+
+function updateAll() {
+  // Stop any running animation and clear the time marker
+  if (animState.active) stopAnimation();
+  markerTime = null;
+
+  const solutionOverlay = document.getElementById('solution-spinner');
+  const plotOverlay     = document.getElementById('plot-spinner');
+  // Show both content overlays while computing
+  solutionOverlay.classList.remove('plot-hidden', 'plot-spinner-overlay--idle');
+  plotOverlay.classList.remove('plot-hidden', 'plot-spinner-overlay--idle');
+
+  return withSpinner('spinner-update', 'btn-update', SPINNER_MS, () => {
+    const params = readParams();
+    const { forceType, forceTarget, forceA, forceOmega, forcePhi } = readForceParams();
+    const forcingEnabled = forceType !== 'none';
+
+    // Always build the analytic (unforced) oscillator for the LaTeX display
+    const analyticOsc = new CoupledOscillator(params);
+    const lt          = generateLatex(analyticOsc);
+
+    // For plots/animation use RK4 when forcing is active, analytic otherwise
+    const tmax  = parseFloat(document.getElementById('p-tmax').value)  || 30;
+    const steps = parseInt(document.getElementById('p-steps').value, 10) || 600;
+    const tArr  = Array.from({length: steps+1}, (_,i) => i * tmax / steps);
+
+    currentOsc = forcingEnabled
+      ? new ForcedOscillatorRK4({ ...params, tMax: tmax, steps,
+          forceType, forceTarget, forceA, forceOmega, forcePhi })
+      : analyticOsc;
+
+    // Show / hide the forced-system warning banner
+    const forceWarning = document.getElementById('force-warning');
+    if (forceWarning) forceWarning.style.display = forcingEnabled ? '' : 'none';
+
+    const start = Date.now();
+    return new Promise(resolve => {
+      // Let the browser paint the spinners before heavy work
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        try {
+          // Render omega display with radical form (always from analytic solution)
+          renderKatex('disp-w1', `\\omega_1 = ${omegaExactLatex(analyticOsc.omega1, analyticOsc._lamSum, analyticOsc._discSq)}`);
+          renderKatex('disp-w2', `\\omega_2 = ${omegaExactLatex(analyticOsc.omega2, analyticOsc._lamSum, analyticOsc._discSq)}`);
+
+          // Render solution expressions
+          renderKatex('sol-x1', lt.x1);
+          renderKatex('sol-v1', lt.v1);
+          renderKatex('sol-a1', lt.a1);
+          renderKatex('sol-x2', lt.x2);
+          renderKatex('sol-v2', lt.v2);
+          renderKatex('sol-a2', lt.a2);
+
+          // Render charts
+          CHART_IDS.forEach(id => buildOrUpdateChart(id, currentOsc, tArr));
+          // Store tArr globally for animation and marker use
+          currentTArr = tArr;
+          // Enforce: only the selected chart is visible (Chart.js sets display:block on all)
+          const activeId = document.getElementById('plot-select').value;
+          CHART_IDS.forEach(id => {
+            document.getElementById(`chart-${id}`).style.display = (id === activeId) ? 'block' : 'none';
+          });
+          // Show initial SVG position (t=0 = initial conditions)
+          svgScale = computeSvgScale();
+          updateSvgAnimation(0);
+        } catch (e) {
+          console.error('Render error:', e);
+        }
+
+        // Enforce 2 s minimum then reveal content
+        const elapsed = Date.now() - start;
+        setTimeout(() => {
+          solutionOverlay.classList.add('plot-hidden');
+          plotOverlay.classList.add('plot-hidden');
+          resolve();
+        }, Math.max(0, SPINNER_MS - elapsed));
+      }));
+    });
+  });
+}
+
+// ── Plot dropdown ───────────────────────────────────────────────────────
+document.getElementById('plot-select').addEventListener('change', function () {
+  const val = this.value;
+  document.querySelectorAll('.chart-canvas').forEach(c => { c.style.display = 'none'; });
+  document.getElementById(`chart-${val}`).style.display = 'block';
+});
+
+// ── Config dropdown ─────────────────────────────────────────────────────
+document.getElementById('p-config').addEventListener('change', () => {
+  onConfigChange();
+  updateAll();
+});
+
+// ── Force-type dropdown (show/hide force parameters) ────────────────────
+document.getElementById('p-force-type').addEventListener('change', function () {
+  document.getElementById('force-params').style.display = this.value !== 'none' ? '' : 'none';
+});
+
+// ── Spinner helper for utility buttons ──────────────────────────────────
+function spinThenShow(btnId, spinnerId, resultId, computeFn) {
+  const btn = document.getElementById(btnId);
+  const spinner = document.getElementById(spinnerId);
+  const label = btn.querySelector('.btn-label');
+  spinner.classList.remove('spinner-hidden');
+  label.style.display = 'none';
+  btn.disabled = true;
+  const resultHtml = computeFn();
+  setTimeout(() => {
+    spinner.classList.add('spinner-hidden');
+    label.style.display = '';
+    btn.disabled = false;
+    document.getElementById(resultId).innerHTML = resultHtml;
+  }, SPINNER_MS);
+}
+
+// ── Find first time ─────────────────────────────────────────────────────
+document.getElementById('btn-findtime').addEventListener('click', () => {
+  spinThenShow('btn-findtime', 'spinner-findtime', 'result-findtime', () => {
+    if (!currentOsc) return '<span class="res-none">Run Update first.</span>';
+    const mass   = parseInt(document.getElementById('u-mass').value, 10);
+    const qty    = document.getElementById('u-qty').value;
+    const target = parseFloat(document.getElementById('u-target').value);
+    const tol    = parseFloat(document.getElementById('u-tol').value) || 1e-6;
+    const tMin   = parseFloat(document.getElementById('u-tsearch-min').value) || 0;
+    const tMax   = parseFloat(document.getElementById('u-tsearch-max').value) || 100;
+    const result = currentOsc.firstTimeTo(mass, qty, target, { tMin, tMax, tolerance: tol, dt: 0.005 });
+    const qLabel = qty==='x' ? 'position' : qty==='v' ? 'velocity' : 'acceleration';
+    if (result === null) {
+      markerTime = null;
+      applyMarkerToAllCharts();
+      return `<span class="res-none">Not found in [${tMin}, ${tMax}].</span>`;
+    }
+    // Mark the found time on the charts
+    markerTime = result;
+    applyMarkerToAllCharts();
+    return `<span class="res-label">First time mass ${mass} ${qLabel} = ${target}:</span><br>` +
+           `<span class="res-value">t ≈ ${result.toFixed(8)}</span>`;
+  });
+});
+
+// ── Value at time ───────────────────────────────────────────────────────
+document.getElementById('btn-valattime').addEventListener('click', () => {
+  spinThenShow('btn-valattime', 'spinner-valattime', 'result-valattime', () => {
+    const tInput = document.getElementById('u-time').value.trim();
+    if (tInput === '') return '<span class="res-none">Enter a time value above, then click Compute.</span>';
+    if (!currentOsc) return '<span class="res-none">Run Update first.</span>';
+    const t = parseFloat(tInput);
+    if (!Number.isFinite(t)) return '<span class="res-none">Invalid time value.</span>';
+    const v = currentOsc.valueAtTime(t);
+    const fmt = n => n.toFixed(8);
+    return `
+      <table class="val-table">
+        <thead><tr><th>Quantity</th><th>Mass 1</th><th>Mass 2</th></tr></thead>
+        <tbody>
+          <tr><td>Position x(${t})</td><td>${fmt(v.x1)}</td><td>${fmt(v.x2)}</td></tr>
+          <tr><td>Velocity v(${t})</td><td>${fmt(v.v1)}</td><td>${fmt(v.v2)}</td></tr>
+          <tr><td>Acceleration a(${t})</td><td>${fmt(v.a1)}</td><td>${fmt(v.a2)}</td></tr>
+        </tbody>
+      </table>`;
+  });
+});
+
+// ── Update button ───────────────────────────────────────────────────────
+document.getElementById('btn-update').addEventListener('click', updateAll);
+
+// ── Play / Pause button ─────────────────────────────────────────────────
+document.getElementById('btn-play').addEventListener('click', () => {
+  if (!currentOsc) return;
+  if (animState.active) stopAnimation();
+  else startAnimation();
+});
+
+// ── Reset Zoom button ───────────────────────────────────────────────────
+document.getElementById('btn-reset-zoom').addEventListener('click', () => {
+  CHART_IDS.forEach(id => { if (charts[id]) charts[id].resetZoom(); });
+});
+
+// ── Initial render (after KaTeX + Chart.js load) ────────────────────────
+window.addEventListener('load', () => {
+  onConfigChange();
+});
+</script>
+</body>
+</html>
